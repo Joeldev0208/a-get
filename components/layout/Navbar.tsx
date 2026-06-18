@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/ui/AuthProvider";
 import styles from "./layout.module.css";
 
 interface NavbarProps {
@@ -7,12 +10,40 @@ interface NavbarProps {
 }
 
 export default function Navbar({ title }: NavbarProps) {
+  const router = useRouter();
+  const { user, signOut } = useAuth();
+  const [showMenu, setShowMenu] = useState(false);
+
+  const handleLogout = async () => {
+    await signOut();
+    router.push("/");
+  };
+
+  const userName = user?.user_metadata?.nombre || user?.email?.split("@")[0] || "Usuario";
+
   return (
     <header className={styles.navbar}>
       <h1 className={styles.navbarTitle}>{title}</h1>
       <div className={styles.navbarUser}>
-        <div className={styles.userAvatar}>U</div>
-        <span className={styles.userName}>Usuario</span>
+        <button
+          onClick={() => setShowMenu(!showMenu)}
+          className={styles.userButton}
+        >
+          <div className={styles.userAvatar}>
+            {userName.charAt(0).toUpperCase()}
+          </div>
+          <span className={styles.userName}>{userName}</span>
+        </button>
+        {showMenu && (
+          <div className={styles.dropdown}>
+            <button
+              onClick={handleLogout}
+              className={styles.dropdownItem}
+            >
+              Cerrar Sesión
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );

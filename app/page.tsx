@@ -1,6 +1,16 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+import Auth from "@/components/ui/Auth";
 
 export default function Home() {
+  const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "registro">("login");
+
+  const openLogin = () => { setAuthMode("login"); setShowAuth(true); };
+  const openRegistro = () => { setAuthMode("registro"); setShowAuth(true); };
+
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
@@ -12,18 +22,18 @@ export default function Home() {
           AGET
         </div>
         <div className="flex items-center gap-3">
-          <Link
-            href="/inicio"
+          <button
+            onClick={openLogin}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
           >
             Iniciar Sesión
-          </Link>
-          <Link
-            href="/inicio"
+          </button>
+          <button
+            onClick={openRegistro}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
           >
             Registrarse
-          </Link>
+          </button>
         </div>
       </header>
 
@@ -99,6 +109,16 @@ export default function Home() {
       <footer className="border-t border-slate-200 bg-white px-6 py-6 text-center text-sm text-slate-500">
         © {new Date().getFullYear()} AGET. Todos los derechos reservados.
       </footer>
+
+      {/* Modal de Auth */}
+      <Auth
+        isOpen={showAuth}
+        onClose={() => setShowAuth(false)}
+        onSuccess={() => {
+          setShowAuth(false);
+          window.location.href = "/inicio";
+        }}
+      />
     </div>
   );
 }

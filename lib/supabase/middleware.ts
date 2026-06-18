@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Crea un cliente de Supabase para usar en el Middleware de Next.js.
+ * Crea un cliente de Supabase para usar en el Middleware/Proxy de Next.js.
  * Este cliente tiene acceso a request y response para manejar cookies
  * y refrescar la sesión automáticamente.
  */
