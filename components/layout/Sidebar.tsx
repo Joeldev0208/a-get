@@ -10,7 +10,7 @@ const navItems = [
   { href: "/inicio", label: "Inicio", icon: LayoutDashboard },
   { href: "/rrhh/empleados", label: "RR.HH.", icon: Users },
   { href: "/tareas/proyectos", label: "Tareas", icon: ClipboardList },
-  { href: "/facturacion/clientes", label: "Facturación", icon: Receipt },
+  { href: "/facturacion", label: "Facturación", icon: Receipt },
 ];
 
 export default function Sidebar() {

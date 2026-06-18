@@ -52,6 +52,7 @@ export interface FacturaInput {
 
 export interface FacturaConCliente extends Factura {
   clientes: { nombre: string; rnc_cedula: string | null } | null;
+  detalles_factura?: DetalleFactura[];
 }
 
 // ---- Detalles de Factura ----

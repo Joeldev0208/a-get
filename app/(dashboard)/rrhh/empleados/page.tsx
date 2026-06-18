@@ -8,21 +8,23 @@ import ErrorBox from "@/components/ui/ErrorBox";
 import Modal from "@/components/ui/Modal";
 import FormField from "@/components/ui/FormField";
 import SubmitButton from "@/components/ui/SubmitButton";
-import { listarEmpleados, crearEmpleado, listarDepartamentos } from "@/lib/services/rrhh.service";
+import { listarEmpleados, crearEmpleado, actualizarEmpleado, eliminarEmpleado, listarDepartamentos } from "@/lib/services/rrhh.service";
 import { ServiceError } from "@/lib/services/supabase-service";
 import type { Departamento, EmpleadoConDepartamento } from "@/lib/types/rrhh";
 import { Plus, Pencil, Trash2, ClipboardCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
-// ── Formulario de Empleado ──────────────────────────────────────
+// ── Formulario de Empleado (Crear / Editar) ─────────────────────
 interface EmpleadoFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
   departamentos: Departamento[];
+  empleado?: EmpleadoConDepartamento | null;
 }
 
-function EmpleadoForm({ isOpen, onClose, onSuccess, departamentos }: EmpleadoFormProps) {
+function EmpleadoForm({ isOpen, onClose, onSuccess, departamentos, empleado }: EmpleadoFormProps) {
   const router = useRouter();
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
@@ -32,16 +34,19 @@ function EmpleadoForm({ isOpen, onClose, onSuccess, departamentos }: EmpleadoFor
   const [departamentoId, setDepartamentoId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const esEdicion = !!empleado;
 
-  const resetForm = () => {
-    setNombre("");
-    setEmail("");
-    setPuesto("");
-    setSalario("");
-    setActivo("true");
-    setDepartamentoId("");
-    setError(null);
-  };
+  useEffect(() => {
+    if (isOpen) {
+      setNombre(empleado?.nombre || "");
+      setEmail(empleado?.email || "");
+      setPuesto(empleado?.puesto || "");
+      setSalario(empleado?.salario ? String(empleado.salario) : "");
+      setActivo(empleado?.activo !== undefined ? String(empleado.activo) : "true");
+      setDepartamentoId(empleado?.departamento_id || "");
+      setError(null);
+    }
+  }, [isOpen, empleado]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,22 +54,27 @@ function EmpleadoForm({ isOpen, onClose, onSuccess, departamentos }: EmpleadoFor
     if (!email.trim()) { setError("El email es obligatorio"); return; }
     if (!puesto.trim()) { setError("El puesto es obligatorio"); return; }
 
+    const payload = {
+      nombre: nombre.trim(),
+      email: email.trim(),
+      puesto: puesto.trim(),
+      salario: Number(salario) || 0,
+      activo: activo === "true",
+      departamento_id: departamentoId || null,
+    };
+
     try {
       setLoading(true);
       setError(null);
-      await crearEmpleado({
-        nombre: nombre.trim(),
-        email: email.trim(),
-        puesto: puesto.trim(),
-        salario: Number(salario) || 0,
-        activo: activo === "true",
-        departamento_id: departamentoId || null,
-      });
+      if (esEdicion) {
+        await actualizarEmpleado(empleado!.id, payload);
+      } else {
+        await crearEmpleado(payload);
+      }
       onSuccess();
       onClose();
-      resetForm();
     } catch (err: any) {
-      setError(err.message || "Error al crear empleado");
+      setError(err.message || "Error al guardar empleado");
     } finally {
       setLoading(false);
     }
@@ -73,7 +83,7 @@ function EmpleadoForm({ isOpen, onClose, onSuccess, departamentos }: EmpleadoFor
   const deptoOptions = departamentos.map((d) => ({ value: d.id, label: d.nombre }));
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Nuevo Empleado" size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title={esEdicion ? "Editar Empleado" : "Nuevo Empleado"} size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="Nombre" name="nombre" value={nombre} onChange={setNombre} required placeholder="Nombre completo" />
@@ -81,19 +91,12 @@ function EmpleadoForm({ isOpen, onClose, onSuccess, departamentos }: EmpleadoFor
           <FormField label="Puesto" name="puesto" value={puesto} onChange={setPuesto} required placeholder="Ej: Desarrollador" />
           <FormField label="Salario" name="salario" type="number" value={salario} onChange={setSalario} placeholder="0.00" min={0} step={0.01} />
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-gray-700">
-              Departamento
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Departamento</label>
             <div className="flex gap-2">
               <div className="flex-1">
                 <FormField label="" name="departamentoId" type="select" value={departamentoId} onChange={setDepartamentoId} options={deptoOptions} />
               </div>
-              <button
-                type="button"
-                onClick={() => router.push("/rrhh/departamentos")}
-                className="mt-0 inline-flex items-center gap-1 rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100"
-                title="Ir a Departamentos"
-              >
+              <button type="button" onClick={() => router.push("/rrhh/departamentos")} className="mt-0 inline-flex items-center gap-1 rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100" title="Ir a Departamentos">
                 <Plus size={16} />
                 <span className="hidden sm:inline">Nuevo</span>
               </button>
@@ -102,13 +105,13 @@ function EmpleadoForm({ isOpen, onClose, onSuccess, departamentos }: EmpleadoFor
           <FormField label="Estado" name="activo" type="select" value={activo} onChange={setActivo} options={[{ value: "true", label: "Activo" }, { value: "false", label: "Inactivo" }]} />
         </div>
         {error && <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</div>}
-        <SubmitButton loading={loading} text="Crear Empleado" />
+        <SubmitButton loading={loading} text={esEdicion ? "Actualizar Empleado" : "Crear Empleado"} />
       </form>
     </Modal>
   );
 }
 
-// ── Botón wrapper ───────────────────────────────────────────────
+// ── Botón wrapper: Nuevo ────────────────────────────────────────
 function NuevoEmpleadoBtn({ onSuccess, departamentos }: { onSuccess: () => void; departamentos: Departamento[] }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -122,6 +125,19 @@ function NuevoEmpleadoBtn({ onSuccess, departamentos }: { onSuccess: () => void;
   );
 }
 
+// ── Botón de editar ─────────────────────────────────────────────
+function EditarEmpleadoBtn({ empleado, onSuccess, departamentos }: { empleado: EmpleadoConDepartamento; onSuccess: () => void; departamentos: Departamento[] }) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <>
+      <button onClick={() => setIsOpen(true)} className="mr-2 rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-blue-600">
+        <Pencil size={16} />
+      </button>
+      <EmpleadoForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} departamentos={departamentos} empleado={empleado} />
+    </>
+  );
+}
+
 // ── Página principal ────────────────────────────────────────────
 export default function EmpleadosPage() {
   const router = useRouter();
@@ -129,6 +145,13 @@ export default function EmpleadosPage() {
   const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+
+  // Confirm dialog
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTitle, setConfirmTitle] = useState("");
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmSkipKey, setConfirmSkipKey] = useState("");
+  const [empleadoToDelete, setEmpleadoToDelete] = useState<string | null>(null);
 
   const cargarDatos = async () => {
     try {
@@ -151,6 +174,28 @@ export default function EmpleadosPage() {
 
   const handleNuevo = () => cargarDatos();
 
+  const handleEliminar = async (id: string) => {
+    const skipKey = "aget_confirm_skip_empleado";
+    if (localStorage.getItem(skipKey) === "true") {
+      await eliminarEmpleado(id);
+      cargarDatos();
+      return;
+    }
+    setConfirmTitle("Eliminar Empleado");
+    setConfirmMessage("¿Estás seguro de eliminar este empleado? Esta acción no se puede deshacer.");
+    setConfirmSkipKey(skipKey);
+    setEmpleadoToDelete(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmarEliminar = async () => {
+    if (empleadoToDelete) {
+      await eliminarEmpleado(empleadoToDelete);
+      cargarDatos();
+      setEmpleadoToDelete(null);
+    }
+  };
+
   return (
     <div>
       <PageHeader
@@ -158,10 +203,7 @@ export default function EmpleadosPage() {
         actions={
           <div className="flex items-center gap-2">
             <NuevoEmpleadoBtn onSuccess={handleNuevo} departamentos={departamentos} />
-            <button
-              onClick={() => router.push("/rrhh/asistencia")}
-              className="inline-flex items-center gap-2 rounded-lg border border-blue-300 bg-white px-4 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-50"
-            >
+            <button onClick={() => router.push("/rrhh/asistencia")} className="inline-flex items-center gap-2 rounded-lg border border-blue-300 bg-white px-4 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-50">
               <ClipboardCheck size={16} />
               Asistencia
             </button>
@@ -203,8 +245,8 @@ export default function EmpleadosPage() {
                     </span>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
-                    <button className="mr-2 rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-blue-600"><Pencil size={16} /></button>
-                    <button className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-600"><Trash2 size={16} /></button>
+                    <EditarEmpleadoBtn empleado={empleado} onSuccess={handleNuevo} departamentos={departamentos} />
+                    <button onClick={() => handleEliminar(empleado.id)} className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-600"><Trash2 size={16} /></button>
                   </td>
                 </tr>
               ))}
@@ -212,6 +254,18 @@ export default function EmpleadosPage() {
           </table>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        onClose={() => { setConfirmOpen(false); setEmpleadoToDelete(null); }}
+        onConfirm={confirmarEliminar}
+        title={confirmTitle}
+        message={confirmMessage}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        variant="danger"
+        skipKey={confirmSkipKey}
+      />
     </div>
   );
 }
