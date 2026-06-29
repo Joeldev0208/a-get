@@ -12,10 +12,11 @@ interface AuthProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  initialMode?: Modo;
 }
 
-export default function Auth({ isOpen, onClose, onSuccess }: AuthProps) {
-  const [modo, setModo] = useState<Modo>("login");
+export default function Auth({ isOpen, onClose, onSuccess, initialMode = "login" }: AuthProps) {
+  const [modo, setModo] = useState<Modo>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nombre, setNombre] = useState("");
@@ -44,17 +45,24 @@ export default function Auth({ isOpen, onClose, onSuccess }: AuthProps) {
 
     try {
       setLoading(true);
+      setError(null);
+
+      // Timeout de seguridad para evitar "carga infinita"
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("La solicitud tardó demasiado. Verifica tu conexión.")), 15000)
+      );
 
       if (modo === "login") {
-        const { error } = await supabase.auth.signInWithPassword({
+        const loginPromise = supabase.auth.signInWithPassword({
           email: email.trim(),
           password,
         });
+        const { error } = await Promise.race([loginPromise, timeoutPromise]);
         if (error) throw error;
         onSuccess();
         onClose();
       } else {
-        const { error } = await supabase.auth.signUp({
+        const signupPromise = supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
@@ -63,12 +71,34 @@ export default function Auth({ isOpen, onClose, onSuccess }: AuthProps) {
             },
           },
         });
+        const { error } = await Promise.race([signupPromise, timeoutPromise]);
         if (error) throw error;
         alert("Registro exitoso. Ahora puedes iniciar sesión.");
         cambiarModo("login");
       }
     } catch (err: any) {
-      setError(err.message || "Error en la autenticación");
+      // Manejo detallado de errores
+      const errorName = err?.name || "";
+      const errorMsg = err?.message || "";
+      const errorCode = err?.code || "";
+      const errorStatus = err?.status || "";
+
+      if (errorMsg.includes("tardó demasiado") || errorName === "TimeoutError") {
+        setError("Tiempo de espera agotado. Verifica tu conexión a internet.");
+      } else if (errorName === "AuthRetryableFetchError" || errorMsg.includes("fetch") || errorMsg.includes("network") || errorMsg.includes("ERR_NAME_NOT_RESOLVED")) {
+        setError("No se pudo conectar con el servidor de autenticación. Verifica tu conexión a internet y que las variables de entorno de Supabase estén configuradas correctamente.");
+      } else if (errorMsg.includes("Invalid login credentials")) {
+        setError("Email o contraseña incorrectos.");
+      } else if (errorMsg.includes("Email not confirmed")) {
+        setError("Debes confirmar tu email antes de iniciar sesión. Revisa tu bandeja de entrada.");
+      } else if (errorMsg.includes("rate_limit") || errorMsg.includes("429") || errorStatus === 429) {
+        setError("Demasiados intentos. Espera un momento e inténtalo de nuevo.");
+      } else if (errorCode === "validation_failed") {
+        setError("Datos inválidos. Revisa los campos e intenta de nuevo.");
+      } else {
+        setError(err?.message || `Error de conexión (${errorName}). Verifica tu conexión a internet.`);
+      }
+      console.error("Auth error detallado:", { name: errorName, message: errorMsg, code: errorCode, status: errorStatus, err });
     } finally {
       setLoading(false);
     }
@@ -98,7 +128,7 @@ export default function Auth({ isOpen, onClose, onSuccess }: AuthProps) {
           <FormField label="Nombre" name="nombre" value={nombre} onChange={setNombre} required placeholder="Tu nombre completo" />
         )}
         <FormField label="Email" name="email" type="email" value={email} onChange={setEmail} required placeholder="correo@ejemplo.com" />
-        <FormField label="Contraseña" name="password" type="text" value={password} onChange={setPassword} required placeholder="••••••" />
+        <FormField label="Contraseña" name="password" type="password" value={password} onChange={setPassword} required placeholder="••••••" />
         {error && <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</div>}
         <SubmitButton loading={loading} text={modo === "login" ? "Iniciar Sesión" : "Registrarse"} />
 

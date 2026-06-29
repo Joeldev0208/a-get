@@ -161,7 +161,7 @@ export default function InicioPage() {
           </Link>
 
           <Link
-            href="/facturacion/facturas"
+            href="/facturacion"
             className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-purple-300 hover:shadow-md"
           >
             <div className="rounded-lg bg-purple-100 p-2.5 text-purple-600">

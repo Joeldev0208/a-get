@@ -48,12 +48,12 @@ export default function Home() {
           Facturación de tu empresa. Todo en un solo lugar, simple y eficiente.
         </p>
         <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-          <Link
-            href="/inicio"
+          <button
+            onClick={openRegistro}
             className="rounded-lg bg-blue-600 px-8 py-3 text-base font-semibold text-white shadow-lg shadow-blue-200 transition-colors hover:bg-blue-700"
           >
             Comenzar ahora
-          </Link>
+          </button>
           <Link
             href="#features"
             className="rounded-lg border border-slate-300 bg-white px-8 py-3 text-base font-semibold text-slate-700 transition-colors hover:bg-slate-50"
@@ -112,12 +112,14 @@ export default function Home() {
 
       {/* Modal de Auth */}
       <Auth
+        key={authMode}
         isOpen={showAuth}
         onClose={() => setShowAuth(false)}
         onSuccess={() => {
           setShowAuth(false);
           window.location.href = "/inicio";
         }}
+        initialMode={authMode}
       />
     </div>
   );

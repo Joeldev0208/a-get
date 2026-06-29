@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 interface FormFieldProps {
   label: string;
   name: string;
-  type?: "text" | "email" | "number" | "date" | "select" | "textarea";
+  type?: "text" | "email" | "number" | "date" | "select" | "textarea" | "password";
   value: string | number;
   onChange: (value: string) => void;
   error?: string;

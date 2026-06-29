@@ -189,16 +189,69 @@ BEGIN
 END $$;
 
 -- ============================================================
--- RLS (Row Level Security) - Deshabilitado por ahora
--- Se habilitará cuando implementemos autenticación
+-- RLS (Row Level Security) - POLÍTICAS
+-- Cualquier usuario autenticado puede leer, crear, editar y eliminar
 -- ============================================================
-ALTER TABLE empleados DISABLE ROW LEVEL SECURITY;
-ALTER TABLE departamentos DISABLE ROW LEVEL SECURITY;
-ALTER TABLE asistencia DISABLE ROW LEVEL SECURITY;
-ALTER TABLE proyectos DISABLE ROW LEVEL SECURITY;
-ALTER TABLE tareas DISABLE ROW LEVEL SECURITY;
-ALTER TABLE comentarios DISABLE ROW LEVEL SECURITY;
-ALTER TABLE clientes DISABLE ROW LEVEL SECURITY;
-ALTER TABLE facturas DISABLE ROW LEVEL SECURITY;
-ALTER TABLE detalles_factura DISABLE ROW LEVEL SECURITY;
-ALTER TABLE pagos DISABLE ROW LEVEL SECURITY;
+-- Ya habilitado desde el schema original:
+-- ALTER TABLE ... ENABLE ROW LEVEL SECURITY;
+-- Ahora creamos las políticas para usuarios autenticados:
+
+-- Empleados
+CREATE POLICY "Usuarios autenticados pueden ver empleados" ON empleados FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden crear empleados" ON empleados FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden editar empleados" ON empleados FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden eliminar empleados" ON empleados FOR DELETE USING (auth.role() = 'authenticated');
+
+-- Departamentos
+CREATE POLICY "Usuarios autenticados pueden ver departamentos" ON departamentos FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden crear departamentos" ON departamentos FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden editar departamentos" ON departamentos FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden eliminar departamentos" ON departamentos FOR DELETE USING (auth.role() = 'authenticated');
+
+-- Asistencia
+CREATE POLICY "Usuarios autenticados pueden ver asistencia" ON asistencia FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden crear asistencia" ON asistencia FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden editar asistencia" ON asistencia FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden eliminar asistencia" ON asistencia FOR DELETE USING (auth.role() = 'authenticated');
+
+-- Proyectos
+CREATE POLICY "Usuarios autenticados pueden ver proyectos" ON proyectos FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden crear proyectos" ON proyectos FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden editar proyectos" ON proyectos FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden eliminar proyectos" ON proyectos FOR DELETE USING (auth.role() = 'authenticated');
+
+-- Tareas
+CREATE POLICY "Usuarios autenticados pueden ver tareas" ON tareas FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden crear tareas" ON tareas FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden editar tareas" ON tareas FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden eliminar tareas" ON tareas FOR DELETE USING (auth.role() = 'authenticated');
+
+-- Comentarios
+CREATE POLICY "Usuarios autenticados pueden ver comentarios" ON comentarios FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden crear comentarios" ON comentarios FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden editar comentarios" ON comentarios FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden eliminar comentarios" ON comentarios FOR DELETE USING (auth.role() = 'authenticated');
+
+-- Clientes
+CREATE POLICY "Usuarios autenticados pueden ver clientes" ON clientes FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden crear clientes" ON clientes FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden editar clientes" ON clientes FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden eliminar clientes" ON clientes FOR DELETE USING (auth.role() = 'authenticated');
+
+-- Facturas
+CREATE POLICY "Usuarios autenticados pueden ver facturas" ON facturas FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden crear facturas" ON facturas FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden editar facturas" ON facturas FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden eliminar facturas" ON facturas FOR DELETE USING (auth.role() = 'authenticated');
+
+-- Detalles de Factura
+CREATE POLICY "Usuarios autenticados pueden ver detalles" ON detalles_factura FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden crear detalles" ON detalles_factura FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden editar detalles" ON detalles_factura FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden eliminar detalles" ON detalles_factura FOR DELETE USING (auth.role() = 'authenticated');
+
+-- Pagos
+CREATE POLICY "Usuarios autenticados pueden ver pagos" ON pagos FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden crear pagos" ON pagos FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden editar pagos" ON pagos FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden eliminar pagos" ON pagos FOR DELETE USING (auth.role() = 'authenticated');
