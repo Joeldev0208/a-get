@@ -32,7 +32,6 @@ yarn-error.log*
 
 # env files - solo ignorar .env.local, .env.development, etc.
 # .env.example SÍ se sube a git para documentar variables necesarias
-.env.local
 .env.development.local
 .env.test.local
 .env.production.local
