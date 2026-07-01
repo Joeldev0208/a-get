@@ -2,20 +2,23 @@ import { createBrowserClient } from "@supabase/ssr";
 
 /**
  * Cliente de Supabase para usar en el navegador (Client Components).
- * Cuando implementemos Server Components, usaremos lib/supabase/server.ts
+ * Crea el cliente de forma lazy para no fallar durante el prerenderizado
+ * en Vercel (donde las variables de entorno no están disponibles en build).
  */
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-if (typeof window !== "undefined") {
-  console.log("[Supabase] URL:", supabaseUrl);
-  console.log("[Supabase] Key starts with:", supabaseKey?.substring(0, 20) + "...");
+function getSupabaseUrl(): string {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url && typeof window !== "undefined") {
+    console.warn("[Supabase] NEXT_PUBLIC_SUPABASE_URL no está definida");
+  }
+  return url || "https://placeholder.supabase.co";
 }
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error(
-    "Faltan variables de entorno: NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY deben estar definidas en .env.local"
-  );
+function getSupabaseKey(): string {
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!key && typeof window !== "undefined") {
+    console.warn("[Supabase] NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY no está definida");
+  }
+  return key || "placeholder-key";
 }
 
-export const supabase = createBrowserClient(supabaseUrl, supabaseKey);
+export const supabase = createBrowserClient(getSupabaseUrl(), getSupabaseKey());
