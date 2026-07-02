@@ -18,6 +18,7 @@
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.2",
     "clsx": "^2.1.1",
+    "figma-developer-mcp": "^0.13.2",
     "lucide-react": "^1.20.0",
     "next": "16.2.9",
     "react": "19.2.4",
@@ -49,5 +50,6 @@
   "bugs": {
     "url": "https://github.com/rosictor/a-get/issues"
   },
-  "homepage": "https://github.com/rosictor/a-get#readme"
+  "homepage": "https://github.com/rosictor/a-get#readme",
+  "type": "commonjs"
 }

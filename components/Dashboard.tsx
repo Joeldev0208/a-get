@@ -8,14 +8,24 @@ import styles from "@/components/layout/layout.module.css";
 
 const pageTitles: Record<string, string> = {
   "/inicio": "Inicio",
+  // RR.HH.
   "/rrhh/empleados": "Empleados",
   "/rrhh/departamentos": "Departamentos",
   "/rrhh/asistencia": "Asistencia",
+  // Inventario
+  "/inventario/productos": "Productos",
+  "/inventario/csv": "Importar / Exportar CSV",
+  // Ventas
+  "/ventas/pos": "Punto de Venta",
+  "/ventas/clientes": "Clientes",
+  "/ventas/facturas": "Facturas",
+  "/ventas/pagos": "Pagos",
+  // Tareas
   "/tareas/proyectos": "Proyectos",
   "/tareas/tablero": "Tablero Kanban",
-  "/facturacion/clientes": "Clientes",
-  "/facturacion/facturas": "Facturas",
-  "/facturacion/pagos": "Pagos",
+  // Configuración
+  "/configuracion/empresa": "Mi Empresa",
+  "/configuracion/usuarios": "Usuarios y Roles",
 };
 
 interface DashboardLayoutProps {
