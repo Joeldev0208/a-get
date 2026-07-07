@@ -13,6 +13,7 @@ import {
   Settings,
   ChevronDown,
   ChevronRight,
+  Clock,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -40,8 +41,6 @@ const navSections: NavSection[] = [
     icon: Users,
     children: [
       { href: "/rrhh/empleados", label: "Empleados" },
-      { href: "/rrhh/departamentos", label: "Departamentos" },
-      { href: "/rrhh/asistencia", label: "Asistencia" },
     ],
   },
   {
@@ -63,11 +62,26 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    label: "Facturación",
+    icon: ClipboardList,
+    children: [
+      { href: "/facturacion/clientes", label: "Clientes" },
+      { href: "/facturacion/facturas", label: "Facturas" },
+      { href: "/facturacion/pagos", label: "Pagos" },
+    ],
+  },
+  {
+    label: "Sesiones",
+    icon: Clock,
+    children: [
+      { href: "/sesiones", label: "Gestión de Sesiones" },
+    ],
+  },
+  {
     label: "Tareas",
     icon: ClipboardList,
     children: [
-      { href: "/tareas/proyectos", label: "Proyectos" },
-      { href: "/tareas/tablero", label: "Tablero Kanban" },
+      { href: "/tareas/proyectos", label: "Proyectos y Kanban" },
     ],
   },
   {

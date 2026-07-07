@@ -1,9 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
+import { supabase } from "@/lib/supabase";
 import type { Cliente, Factura, FacturaConCliente, PagoConFactura } from "@/lib/types/facturacion";
 
 // ---- Clientes ----
 export async function listarClientes(empresaId: string): Promise<Cliente[]> {
-  const supabase = await createClient();
   const { data } = await supabase
     .from("clientes")
     .select("*")
@@ -14,7 +13,6 @@ export async function listarClientes(empresaId: string): Promise<Cliente[]> {
 }
 
 export async function crearCliente(empresaId: string, data: { nombre: string; email?: string | null; telefono?: string | null; direccion?: string | null; rnc_cedula?: string | null }): Promise<Cliente> {
-  const supabase = await createClient();
   const { data: cliente, error } = await supabase
     .from("clientes")
     .insert({ ...data, empresa_id: empresaId })
@@ -36,8 +34,6 @@ export async function crearFactura(
     detalles: { producto_id?: string; descripcion: string; cantidad: number; precio_unitario: number; total: number }[];
   }
 ): Promise<Factura> {
-  const supabase = await createClient();
-
   // Generar número de factura
   const { data: countData } = await supabase
     .from("facturas")
@@ -80,7 +76,6 @@ export async function crearFactura(
 }
 
 export async function listarFacturas(empresaId: string): Promise<FacturaConCliente[]> {
-  const supabase = await createClient();
   const { data } = await supabase
     .from("facturas")
     .select("*, clientes(nombre, rnc_cedula)")
@@ -92,7 +87,6 @@ export async function listarFacturas(empresaId: string): Promise<FacturaConClien
 
 // ---- Pagos ----
 export async function listarPagos(empresaId: string): Promise<PagoConFactura[]> {
-  const supabase = await createClient();
   const { data } = await supabase
     .from("pagos")
     .select("*, facturas(numero, total)")

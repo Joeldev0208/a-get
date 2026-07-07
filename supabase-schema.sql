@@ -182,7 +182,35 @@ CREATE TABLE IF NOT EXISTS asistencia (
 );
 
 -- ============================================================
--- 5. TAREAS / PROYECTOS (existente + empresa_id)
+-- 5. SESIONES (caja / trabajo)
+-- ============================================================
+
+CREATE TYPE estado_sesion AS ENUM ('abierta', 'cerrada');
+
+CREATE TABLE IF NOT EXISTS sesiones (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
+  usuario_id UUID REFERENCES perfiles_usuario(id) ON DELETE SET NULL,
+  fecha_apertura TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  fecha_cierre TIMESTAMPTZ,
+  estado estado_sesion NOT NULL DEFAULT 'abierta',
+  total_inicial DECIMAL(12,2) NOT NULL DEFAULT 0,
+  total_final DECIMAL(12,2),
+  observaciones TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_sesiones_empresa ON sesiones(empresa_id);
+
+ALTER TABLE sesiones ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Usuarios autenticados pueden ver sesiones" ON sesiones FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden crear sesiones" ON sesiones FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden editar sesiones" ON sesiones FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Usuarios autenticados pueden eliminar sesiones" ON sesiones FOR DELETE USING (auth.role() = 'authenticated');
+
+-- ============================================================
+-- 6. TAREAS / PROYECTOS (existente + empresa_id)
 -- ============================================================
 
 CREATE TYPE estado_proyecto AS ENUM ('activo', 'pausado', 'completado', 'cancelado');

@@ -1,9 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
+import { supabase } from "@/lib/supabase";
 import type { Categoria, CategoriaInput, Producto, ProductoInput } from "@/lib/types/inventario";
 
 // ---- Categorías ----
 export async function listarCategorias(empresaId: string): Promise<Categoria[]> {
-  const supabase = await createClient();
   const { data } = await supabase
     .from("categorias")
     .select("*")
@@ -14,7 +13,6 @@ export async function listarCategorias(empresaId: string): Promise<Categoria[]> 
 }
 
 export async function crearCategoria(empresaId: string, data: CategoriaInput): Promise<Categoria> {
-  const supabase = await createClient();
   const { data: categoria, error } = await supabase
     .from("categorias")
     .insert({ ...data, empresa_id: empresaId })
@@ -26,14 +24,12 @@ export async function crearCategoria(empresaId: string, data: CategoriaInput): P
 }
 
 export async function eliminarCategoria(id: string): Promise<void> {
-  const supabase = await createClient();
   const { error } = await supabase.from("categorias").delete().eq("id", id);
   if (error) throw new Error(`Error al eliminar categoría: ${error.message}`);
 }
 
 // ---- Productos ----
 export async function listarProductos(empresaId: string): Promise<Producto[]> {
-  const supabase = await createClient();
   const { data } = await supabase
     .from("productos")
     .select("*, categorias(nombre)")
@@ -45,7 +41,6 @@ export async function listarProductos(empresaId: string): Promise<Producto[]> {
 }
 
 export async function obtenerProducto(id: string): Promise<Producto | null> {
-  const supabase = await createClient();
   const { data } = await supabase
     .from("productos")
     .select("*, categorias(nombre)")
@@ -56,7 +51,6 @@ export async function obtenerProducto(id: string): Promise<Producto | null> {
 }
 
 export async function crearProducto(empresaId: string, data: ProductoInput): Promise<Producto> {
-  const supabase = await createClient();
   const { data: producto, error } = await supabase
     .from("productos")
     .insert({ ...data, empresa_id: empresaId })
@@ -68,13 +62,11 @@ export async function crearProducto(empresaId: string, data: ProductoInput): Pro
 }
 
 export async function actualizarProducto(id: string, data: Partial<ProductoInput>): Promise<void> {
-  const supabase = await createClient();
   const { error } = await supabase.from("productos").update(data).eq("id", id);
   if (error) throw new Error(`Error al actualizar producto: ${error.message}`);
 }
 
 export async function eliminarProducto(id: string): Promise<void> {
-  const supabase = await createClient();
   const { error } = await supabase.from("productos").update({ activo: false }).eq("id", id);
   if (error) throw new Error(`Error al eliminar producto: ${error.message}`);
 }
@@ -83,7 +75,6 @@ export async function importarProductosCSV(
   empresaId: string,
   productos: { codigo: string; nombre: string; descripcion: string; categoria: string; precio_venta: number; costo: number; stock: number }[]
 ): Promise<{ insertados: number; errores: string[] }> {
-  const supabase = await createClient();
   let insertados = 0;
   const errores: string[] = [];
 

@@ -7,12 +7,94 @@ import { listarClientes } from "@/lib/services/facturacion";
 import { obtenerPerfilActual } from "@/lib/services/empresa";
 import type { Producto } from "@/lib/types/inventario";
 import type { Cliente } from "@/lib/types/facturacion";
-import { Search, Plus, Minus, Trash2, ShoppingCart } from "lucide-react";
+import { Search, Plus, Minus, Trash2, ShoppingCart, Printer } from "lucide-react";
 
 interface CarritoItem {
   producto: Producto;
   cantidad: number;
   total: number;
+}
+
+// ── Generar código de carrito ───────────────────────────────────
+function generarCodigoCarrito(): string {
+  const prefix = "CLI3103";
+  const ultimoNumero = parseInt(localStorage.getItem("ultimo_codigo_pos") || "139", 10);
+  const nuevoNumero = ultimoNumero + 3;
+  localStorage.setItem("ultimo_codigo_pos", nuevoNumero.toString());
+  return `${prefix}${nuevoNumero}`;
+}
+
+// ── Imprimir ticket ────────────────────────────────────────────
+function imprimirTicket(factura: any, carritoItems: CarritoItem[], clienteNombre: string) {
+  const printWindow = window.open("", "_blank", "width=320,height=600");
+  if (!printWindow) return;
+
+  const fecha = new Date().toLocaleString("es-DO");
+  const subtotal = carritoItems.reduce((s, i) => s + i.total, 0);
+  const impuesto = subtotal * 0.18;
+  const total = subtotal + impuesto;
+
+  const itemsHtml = carritoItems
+    .map(
+      (i) =>
+        `<tr>
+          <td style="text-align:left">${i.producto.codigo}</td>
+          <td style="text-align:left">${i.producto.nombre}</td>
+          <td style="text-align:center">${i.cantidad}</td>
+          <td style="text-align:right">$${i.total.toFixed(2)}</td>
+        </tr>`
+    )
+    .join("");
+
+  printWindow.document.write(`
+    <html>
+      <head>
+        <style>
+          body { font-family: 'Courier New', monospace; font-size: 12px; width: 76mm; margin: 0; padding: 5mm; }
+          h2 { text-align: center; margin: 0 0 5px; font-size: 16px; }
+          .center { text-align: center; }
+          hr { border: none; border-top: 1px dashed #333; margin: 8px 0; }
+          table { width: 100%; border-collapse: collapse; }
+          th { font-size: 10px; text-align: left; border-bottom: 1px solid #333; padding: 4px 0; }
+          td { padding: 2px 0; }
+          .total-row td { font-weight: bold; border-top: 1px solid #333; padding-top: 4px; }
+          .gracias { text-align: center; margin-top: 10px; font-size: 11px; }
+        </style>
+      </head>
+      <body>
+        <h2>AGET - EMPRESA</h2>
+        <p class="center" style="margin:0;font-size:10px">Factura: ${factura?.numero || "N/A"}</p>
+        <p class="center" style="margin:0;font-size:10px">Cliente: ${clienteNombre}</p>
+        <p class="center" style="margin:0;font-size:10px">Fecha: ${fecha}</p>
+        <hr/>
+        <table>
+          <tr>
+            <th>Código</th>
+            <th>Producto</th>
+            <th style="text-align:center">Qty</th>
+            <th style="text-align:right">Total</th>
+          </tr>
+          ${itemsHtml}
+          <tr class="total-row">
+            <td colspan="3" style="text-align:right">Subtotal:</td>
+            <td style="text-align:right">$${subtotal.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td colspan="3" style="text-align:right">ITBIS (18%):</td>
+            <td style="text-align:right">$${impuesto.toFixed(2)}</td>
+          </tr>
+          <tr class="total-row">
+            <td colspan="3" style="text-align:right">TOTAL:</td>
+            <td style="text-align:right">$${total.toFixed(2)}</td>
+          </tr>
+        </table>
+        <hr/>
+        <p class="gracias">¡Gracias por su compra!</p>
+        <script>window.print(); window.close();</script>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
 }
 
 export default function PosPage() {
@@ -23,6 +105,7 @@ export default function PosPage() {
   const [clienteId, setClienteId] = useState("");
   const [empresaId, setEmpresaId] = useState("");
   const [loading, setLoading] = useState(true);
+  const [codigoCarrito, setCodigoCarrito] = useState("");
 
   useEffect(() => {
     loadData();
@@ -39,6 +122,7 @@ export default function PosPage() {
       ]);
       setProductos(prods);
       setClientes(clts);
+      setCodigoCarrito(generarCodigoCarrito());
     } catch (e) {
       console.error(e);
     } finally {
@@ -118,9 +202,18 @@ export default function PosPage() {
         })),
       });
 
+      // Obtener nombre del cliente para el ticket
+      const clienteSel = clientes.find((c) => c.id === clienteId);
+
+      // Imprimir ticket
+      imprimirTicket(factura, carrito, clienteSel?.nombre || "Cliente");
+
       alert(`Factura #${factura.numero} creada exitosamente`);
+
+      // Reset carrito y generar nuevo código
       setCarrito([]);
       setClienteId("");
+      setCodigoCarrito(generarCodigoCarrito());
     } catch (e: any) {
       alert(`Error al crear factura: ${e.message}`);
     }
@@ -175,6 +268,13 @@ export default function PosPage() {
             {carrito.length} items
           </span>
         </div>
+
+        {/* Código de carrito */}
+        {codigoCarrito && (
+          <div className="mb-3 rounded-lg bg-gray-50 px-3 py-2 text-center text-sm font-mono font-bold text-blue-700">
+            Código: {codigoCarrito}
+          </div>
+        )}
 
         {/* Selector de cliente */}
         <select
