@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from "react";
 import PageHeader from "@/components/layout/PageHeader";
+import Loading from "@/components/ui/Loading";
+import ErrorBox from "@/components/ui/ErrorBox";
+import EmptyState from "@/components/ui/EmptyState";
 import { listarProductos } from "@/lib/services/inventario";
 import { obtenerPerfilActual } from "@/lib/services/empresa";
 import type { Producto } from "@/lib/types/inventario";
-import { Search, Plus, Minus, Trash2, ShoppingCart } from "lucide-react";
+import { Search, Plus, Minus, Trash2, ShoppingCart, AlertCircle } from "lucide-react";
 
 interface CarritoItem {
   producto: Producto;
@@ -25,7 +28,10 @@ function generarCodigoCarrito(): string {
 // ── Imprimir ticket ────────────────────────────────────────────
 function imprimirTicket(factura: any, carritoItems: CarritoItem[]) {
   const printWindow = window.open("", "_blank", "width=320,height=600");
-  if (!printWindow) return;
+  if (!printWindow) {
+    alert("No se pudo abrir la ventana de impresión. Verifica los permisos del navegador.");
+    return;
+  }
 
   const fecha = new Date().toLocaleString("es-DO");
   const subtotal = carritoItems.reduce((s, i) => s + i.total, 0);
@@ -100,6 +106,8 @@ export default function PosPage() {
   const [carrito, setCarrito] = useState<CarritoItem[]>([]);
   const [empresaId, setEmpresaId] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [codigoCarrito, setCodigoCarrito] = useState("");
 
   useEffect(() => {
@@ -108,14 +116,26 @@ export default function PosPage() {
 
   async function loadData() {
     try {
+      setLoading(true);
+      setError(null);
+
       const perfil = await obtenerPerfilActual();
-      if (!perfil) return;
+      if (!perfil) {
+        setError("No se encontró un perfil de usuario. Inicia sesión nuevamente.");
+        return;
+      }
+
+      if (!perfil.empresa_id) {
+        setError("No tienes una empresa asignada.");
+        return;
+      }
+
       setEmpresaId(perfil.empresa_id);
       const prods = await listarProductos(perfil.empresa_id);
       setProductos(prods);
       setCodigoCarrito(generarCodigoCarrito());
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      setError(e.message || "Error al cargar productos");
     } finally {
       setLoading(false);
     }
@@ -128,6 +148,27 @@ export default function PosPage() {
   );
 
   function addToCart(producto: Producto) {
+    // Validar que el producto esté activo
+    if (!producto.activo) {
+      alert("Este producto no está disponible");
+      return;
+    }
+
+    // Validar stock disponible
+    if (producto.stock <= 0) {
+      alert("Producto sin stock disponible");
+      return;
+    }
+
+    // Validar que no se exceda el stock en el carrito
+    const enCarrito = carrito.find((item) => item.producto.id === producto.id);
+    const cantidadEnCarrito = enCarrito ? enCarrito.cantidad : 0;
+
+    if (cantidadEnCarrito >= producto.stock) {
+      alert(`Stock máximo disponible: ${producto.stock} unidades`);
+      return;
+    }
+
     setCarrito((prev) => {
       const exist = prev.find((item) => item.producto.id === producto.id);
       if (exist) {
@@ -151,16 +192,26 @@ export default function PosPage() {
   function updateCantidad(productoId: string, delta: number) {
     setCarrito((prev) =>
       prev
-        .map((item) =>
-          item.producto.id === productoId
-            ? {
-                ...item,
-                cantidad: Math.max(1, item.cantidad + delta),
-                total:
-                  Math.max(1, item.cantidad + delta) * item.producto.precio_venta,
-              }
-            : item
-        )
+        .map((item) => {
+          if (item.producto.id !== productoId) return item;
+
+          const nuevaCantidad = item.cantidad + delta;
+
+          // Validar stock máximo
+          if (nuevaCantidad > item.producto.stock) {
+            alert(`Stock máximo disponible: ${item.producto.stock} unidades`);
+            return item;
+          }
+
+          // Validar cantidad mínima de 1
+          if (nuevaCantidad < 1) return item;
+
+          return {
+            ...item,
+            cantidad: nuevaCantidad,
+            total: nuevaCantidad * item.producto.precio_venta,
+          };
+        })
         .filter((item) => item.cantidad > 0)
     );
   }
@@ -174,12 +225,33 @@ export default function PosPage() {
   const total = subtotal + impuesto;
 
   async function handleCheckout() {
-    if (carrito.length === 0) return alert("Agrega productos al carrito");
+    if (carrito.length === 0) {
+      alert("Agrega productos al carrito");
+      return;
+    }
+
+    if (!empresaId) {
+      alert("Error: No se ha cargado la empresa. Recarga la página.");
+      return;
+    }
+
+    const confirmacion = confirm(`¿Confirmar venta por $${total.toFixed(2)}?`);
+    if (!confirmacion) return;
 
     try {
-      const { crearFactura } = await import("@/lib/services/facturacion");
+      setCheckoutLoading(true);
+
+      const { crearFactura, obtenerClientePorDefecto } = await import("@/lib/services/facturacion");
+
+      // Obtener o crear cliente "Consumidor Final"
+      let cliente = await obtenerClientePorDefecto(empresaId);
+      if (!cliente) {
+        alert("Error al obtener cliente por defecto");
+        return;
+      }
+
       const factura = await crearFactura(empresaId, {
-        cliente_id: null as any, // Cliente por defecto
+        cliente_id: cliente.id,
         subtotal,
         impuesto,
         total,
@@ -202,10 +274,21 @@ export default function PosPage() {
       setCodigoCarrito(generarCodigoCarrito());
     } catch (e: any) {
       alert(`Error al crear factura: ${e.message}`);
+    } finally {
+      setCheckoutLoading(false);
     }
   }
 
-  if (loading) return <div className="p-8 text-center">Cargando...</div>;
+  if (loading) return <Loading />;
+
+  if (error) {
+    return (
+      <div>
+        <PageHeader title="Punto de Venta" />
+        <ErrorBox error={new Error(error)} onRetry={loadData} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex gap-6 h-[calc(100vh-140px)]">
@@ -345,10 +428,10 @@ export default function PosPage() {
 
         <button
           onClick={handleCheckout}
-          disabled={carrito.length === 0}
+          disabled={carrito.length === 0 || checkoutLoading}
           className="w-full mt-4 py-3 text-lg rounded-lg bg-blue-600 font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
-          Cobrar ${total.toFixed(2)}
+          {checkoutLoading ? "Procesando..." : `Cobrar $${total.toFixed(2)}`}
         </button>
       </div>
     </div>

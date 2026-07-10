@@ -403,6 +403,20 @@ ADD COLUMN IF NOT EXISTS nombre TEXT;
 UPDATE perfiles_usuario 
 SET nombre = 'Usuario ' || LEFT(user_id::text, 8)
 WHERE nombre IS NULL;
+
+-- Agregar columna empresa_id a facturas
+ALTER TABLE facturas 
+ADD COLUMN IF NOT EXISTS empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE;
+
+-- Crear índice para mejorar performance
+CREATE INDEX IF NOT EXISTS idx_facturas_empresa ON facturas(empresa_id);
+
+-- Actualizar facturas existentes con la empresa del cliente
+UPDATE facturas f
+SET empresa_id = c.empresa_id
+FROM clientes c
+WHERE f.cliente_id = c.id
+AND f.empresa_id IS NULL;
 ```
 
 ---

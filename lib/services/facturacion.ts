@@ -23,6 +23,32 @@ export async function crearCliente(empresaId: string, data: { nombre: string; em
   return cliente;
 }
 
+export async function obtenerClientePorDefecto(empresaId: string): Promise<Cliente | null> {
+  // Buscar cliente "Consumidor Final"
+  const { data } = await supabase
+    .from("clientes")
+    .select("*")
+    .eq("empresa_id", empresaId)
+    .eq("nombre", "Consumidor Final")
+    .single();
+
+  if (data) return data;
+
+  // Si no existe, crearlo
+  const { data: cliente, error } = await supabase
+    .from("clientes")
+    .insert({
+      empresa_id: empresaId,
+      nombre: "Consumidor Final",
+      rnc_cedula: "000000000"
+    })
+    .select()
+    .single();
+
+  if (error) throw new Error(`Error al crear cliente por defecto: ${error.message}`);
+  return cliente;
+}
+
 // ---- Facturas ----
 export async function crearFactura(
   empresaId: string,
@@ -34,30 +60,58 @@ export async function crearFactura(
     detalles: { producto_id?: string; descripcion: string; cantidad: number; precio_unitario: number; total: number }[];
   }
 ): Promise<Factura> {
-  // Generar número de factura
-  const { data: countData } = await supabase
+  // Generar número de factura (buscar el máximo número y sumar 1)
+  const { data: maxData } = await supabase
     .from("facturas")
-    .select("id", { count: "exact", head: true })
-    .eq("empresa_id", empresaId);
+    .select("numero")
+    .eq("empresa_id", empresaId)
+    .order("numero", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-  const count = countData?.length || 0;
-  const numero = `FAC-${String(count + 1).padStart(6, "0")}`;
+  let ultimoNumero = 0;
+  if (maxData?.numero) {
+    const match = maxData.numero.match(/FAC-(\d+)/);
+    if (match) ultimoNumero = parseInt(match[1], 10);
+  }
+  const numero = `FAC-${String(ultimoNumero + 1).padStart(6, "0")}`;
 
-  // Crear factura
-  const { data: factura, error } = await supabase
-    .from("facturas")
-    .insert({
-      empresa_id: empresaId,
-      numero,
-      cliente_id: data.cliente_id,
-      subtotal: data.subtotal,
-      impuesto: data.impuesto,
-      total: data.total,
-    })
-    .select()
-    .single();
+  // Crear factura con reintento si hay duplicado
+  let factura: Factura | null = null;
+  let error: any = null;
+  
+  for (let intento = 0; intento < 3; intento++) {
+    const numeroIntento = `FAC-${String(ultimoNumero + 1 + intento).padStart(6, "0")}`;
+    const result = await supabase
+      .from("facturas")
+      .insert({
+        empresa_id: empresaId,
+        numero: numeroIntento,
+        cliente_id: data.cliente_id,
+        subtotal: data.subtotal,
+        impuesto: data.impuesto,
+        total: data.total,
+      })
+      .select()
+      .single();
+    
+    if (result.error) {
+      error = result.error;
+      // Si es error de duplicado, continuar al siguiente intento
+      if (error.code === "23505" && error.message.includes("facturas_numero_key")) {
+        continue;
+      }
+      // Si es otro error, lanzar
+      throw new Error(`Error al crear factura: ${error.message}`);
+    }
+    
+    factura = result.data;
+    break;
+  }
 
-  if (error) throw new Error(`Error al crear factura: ${error.message}`);
+  if (!factura) {
+    throw new Error(`Error al crear factura: No se pudo generar un número único después de 3 intentos`);
+  }
 
   // Crear detalles
   const detalles = data.detalles.map((d) => ({
