@@ -3,7 +3,7 @@
 import type { TareaConAsignado } from "@/lib/types/tareas";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Calendar, User } from "lucide-react";
+import { GripVertical, Calendar, User, Trash2 } from "lucide-react";
 
 const prioridadStyles: Record<string, string> = {
   urgente: "border-l-red-500 bg-red-50",
@@ -21,9 +21,11 @@ const prioridadLabels: Record<string, string> = {
 
 interface TareaCardProps {
   tarea: TareaConAsignado;
+  onEdit?: (tarea: TareaConAsignado) => void;
+  onDelete?: (tareaId: string) => void;
 }
 
-export default function TareaCard({ tarea }: TareaCardProps) {
+export default function TareaCard({ tarea, onEdit, onDelete }: TareaCardProps) {
   const {
     attributes,
     listeners,
@@ -59,11 +61,16 @@ export default function TareaCard({ tarea }: TareaCardProps) {
           <GripVertical size={14} />
         </button>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-gray-900 truncate">{tarea.titulo}</p>
+          <button
+            onClick={() => onEdit?.(tarea)}
+            className="w-full text-left"
+          >
+            <p className="text-sm font-medium text-gray-900 truncate">{tarea.titulo}</p>
+          </button>
           {tarea.descripcion && (
             <p className="mt-0.5 text-xs text-gray-500 line-clamp-2">{tarea.descripcion}</p>
           )}
-          <div className="mt-2 flex flex-wrap items-center gap-2">
+          <div className="mt-2 flex flex-wrap items-center gap-1">
             <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${
               tarea.prioridad === "urgente" ? "bg-red-100 text-red-700" :
               tarea.prioridad === "alta" ? "bg-orange-100 text-orange-700" :
@@ -72,6 +79,8 @@ export default function TareaCard({ tarea }: TareaCardProps) {
             }`}>
               {prioridadLabels[tarea.prioridad]}
             </span>
+          </div>
+          <div className="mt-1 flex items-center gap-1">
             {tarea.empleados && (
               <span className="flex items-center gap-1 text-[10px] text-gray-400">
                 <User size={10} />
@@ -83,6 +92,15 @@ export default function TareaCard({ tarea }: TareaCardProps) {
                 <Calendar size={10} />
                 {new Date(tarea.fecha_limite).toLocaleDateString("es-DO")}
               </span>
+            )}
+            {onDelete && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(tarea.id); }}
+                className="ml-auto rounded p-0.5 text-gray-300 hover:text-red-500"
+                title="Eliminar tarea"
+              >
+                <Trash2 size={10} />
+              </button>
             )}
           </div>
         </div>

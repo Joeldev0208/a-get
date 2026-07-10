@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import type { Proyecto } from "@/lib/types/tareas";
-import { Plus, Search, FolderKanban } from "lucide-react";
+import { Plus, Search, FolderKanban, Pencil, Trash2 } from "lucide-react";
 
 interface ProyectoSidebarProps {
   proyectos: Proyecto[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   onNew: () => void;
+  onEdit?: (proyecto: Proyecto) => void;
+  onDelete?: (id: string) => void;
 }
 
 const estadoColors: Record<string, string> = {
@@ -18,7 +20,7 @@ const estadoColors: Record<string, string> = {
   cancelado: "bg-red-500",
 };
 
-export default function ProyectoSidebar({ proyectos, selectedId, onSelect, onNew }: ProyectoSidebarProps) {
+export default function ProyectoSidebar({ proyectos, selectedId, onSelect, onNew, onEdit, onDelete }: ProyectoSidebarProps) {
   const [search, setSearch] = useState("");
 
   const filtered = proyectos.filter((p) =>
@@ -63,26 +65,50 @@ export default function ProyectoSidebar({ proyectos, selectedId, onSelect, onNew
         ) : (
           <div className="space-y-1">
             {filtered.map((p) => (
-              <button
+              <div
                 key={p.id}
-                onClick={() => onSelect(p.id)}
-                className={`w-full rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
+                className={`group relative w-full rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
                   selectedId === p.id
                     ? "bg-blue-50 text-blue-700"
                     : "text-gray-700 hover:bg-gray-50"
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <span className={`h-2 w-2 shrink-0 rounded-full ${estadoColors[p.estado] || "bg-gray-300"}`} />
-                  <span className="truncate font-medium">{p.nombre}</span>
-                </div>
-                <div className="mt-0.5 flex items-center gap-2 pl-4">
-                  <span className="text-[10px] text-gray-400 capitalize">{p.estado}</span>
-                  {p.responsable_id && (
-                    <span className="text-[10px] text-gray-400">· Asignado</span>
+                <button
+                  onClick={() => onSelect(p.id)}
+                  className="w-full text-left"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`h-2 w-2 shrink-0 rounded-full ${estadoColors[p.estado] || "bg-gray-300"}`} />
+                    <span className="truncate font-medium">{p.nombre}</span>
+                  </div>
+                  <div className="mt-0.5 flex items-center gap-2 pl-4">
+                    <span className="text-[10px] text-gray-400 capitalize">{p.estado}</span>
+                    {p.responsable_id && (
+                      <span className="text-[10px] text-gray-400">· Asignado</span>
+                    )}
+                  </div>
+                </button>
+                <div className="absolute right-2 top-2 hidden gap-0.5 group-hover:flex">
+                  {onEdit && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onEdit(p); }}
+                      className="rounded p-0.5 text-gray-400 hover:bg-gray-200 hover:text-blue-600"
+                      title="Editar proyecto"
+                    >
+                      <Pencil size={12} />
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDelete(p.id); }}
+                      className="rounded p-0.5 text-gray-400 hover:bg-gray-200 hover:text-red-600"
+                      title="Eliminar proyecto"
+                    >
+                      <Trash2 size={12} />
+                    </button>
                   )}
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}

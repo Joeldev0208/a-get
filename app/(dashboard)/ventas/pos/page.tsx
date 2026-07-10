@@ -3,11 +3,9 @@
 import { useState, useEffect } from "react";
 import PageHeader from "@/components/layout/PageHeader";
 import { listarProductos } from "@/lib/services/inventario";
-import { listarClientes } from "@/lib/services/facturacion";
 import { obtenerPerfilActual } from "@/lib/services/empresa";
 import type { Producto } from "@/lib/types/inventario";
-import type { Cliente } from "@/lib/types/facturacion";
-import { Search, Plus, Minus, Trash2, ShoppingCart, Printer } from "lucide-react";
+import { Search, Plus, Minus, Trash2, ShoppingCart } from "lucide-react";
 
 interface CarritoItem {
   producto: Producto;
@@ -25,7 +23,7 @@ function generarCodigoCarrito(): string {
 }
 
 // ── Imprimir ticket ────────────────────────────────────────────
-function imprimirTicket(factura: any, carritoItems: CarritoItem[], clienteNombre: string) {
+function imprimirTicket(factura: any, carritoItems: CarritoItem[]) {
   const printWindow = window.open("", "_blank", "width=320,height=600");
   if (!printWindow) return;
 
@@ -64,7 +62,6 @@ function imprimirTicket(factura: any, carritoItems: CarritoItem[], clienteNombre
       <body>
         <h2>AGET - EMPRESA</h2>
         <p class="center" style="margin:0;font-size:10px">Factura: ${factura?.numero || "N/A"}</p>
-        <p class="center" style="margin:0;font-size:10px">Cliente: ${clienteNombre}</p>
         <p class="center" style="margin:0;font-size:10px">Fecha: ${fecha}</p>
         <hr/>
         <table>
@@ -99,10 +96,8 @@ function imprimirTicket(factura: any, carritoItems: CarritoItem[], clienteNombre
 
 export default function PosPage() {
   const [productos, setProductos] = useState<Producto[]>([]);
-  const [clientes, setClientes] = useState<Cliente[]>([]);
   const [search, setSearch] = useState("");
   const [carrito, setCarrito] = useState<CarritoItem[]>([]);
-  const [clienteId, setClienteId] = useState("");
   const [empresaId, setEmpresaId] = useState("");
   const [loading, setLoading] = useState(true);
   const [codigoCarrito, setCodigoCarrito] = useState("");
@@ -116,12 +111,8 @@ export default function PosPage() {
       const perfil = await obtenerPerfilActual();
       if (!perfil) return;
       setEmpresaId(perfil.empresa_id);
-      const [prods, clts] = await Promise.all([
-        listarProductos(perfil.empresa_id),
-        listarClientes(perfil.empresa_id),
-      ]);
+      const prods = await listarProductos(perfil.empresa_id);
       setProductos(prods);
-      setClientes(clts);
       setCodigoCarrito(generarCodigoCarrito());
     } catch (e) {
       console.error(e);
@@ -184,12 +175,11 @@ export default function PosPage() {
 
   async function handleCheckout() {
     if (carrito.length === 0) return alert("Agrega productos al carrito");
-    if (!clienteId) return alert("Selecciona un cliente");
 
     try {
       const { crearFactura } = await import("@/lib/services/facturacion");
       const factura = await crearFactura(empresaId, {
-        cliente_id: clienteId,
+        cliente_id: null as any, // Cliente por defecto
         subtotal,
         impuesto,
         total,
@@ -202,17 +192,13 @@ export default function PosPage() {
         })),
       });
 
-      // Obtener nombre del cliente para el ticket
-      const clienteSel = clientes.find((c) => c.id === clienteId);
-
       // Imprimir ticket
-      imprimirTicket(factura, carrito, clienteSel?.nombre || "Cliente");
+      imprimirTicket(factura, carrito);
 
       alert(`Factura #${factura.numero} creada exitosamente`);
 
       // Reset carrito y generar nuevo código
       setCarrito([]);
-      setClienteId("");
       setCodigoCarrito(generarCodigoCarrito());
     } catch (e: any) {
       alert(`Error al crear factura: ${e.message}`);
@@ -223,13 +209,13 @@ export default function PosPage() {
 
   return (
     <div className="flex gap-6 h-[calc(100vh-140px)]">
-      {/* Panel izquierdo - Productos */}
+      {/* Panel izquierdo - Productos en lista */}
       <div className="flex-1 flex flex-col">
         <div className="mb-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
-              className="input pl-10"
+              className="w-full rounded-xl border border-gray-300 bg-white py-3 pl-10 pr-4 text-sm shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="Buscar producto por nombre o código..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -238,29 +224,46 @@ export default function PosPage() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto grid grid-cols-3 gap-3 content-start">
-          {filteredProductos.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => addToCart(p)}
-              className="card p-3 text-left hover:border-blue-400 hover:shadow-md transition-all cursor-pointer text-center"
-            >
-              <div className="text-xs text-gray-400 mb-1">{p.codigo}</div>
-              <div className="font-medium text-sm mb-1 line-clamp-2">{p.nombre}</div>
-              <div className="text-lg font-bold text-blue-600">${p.precio_venta.toFixed(2)}</div>
-              <div className="text-xs text-gray-400 mt-1">Stock: {p.stock}</div>
-            </button>
-          ))}
-          {filteredProductos.length === 0 && (
-            <div className="col-span-3 text-center text-gray-400 py-8">
-              No se encontraron productos
-            </div>
-          )}
+        <div className="flex-1 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+          <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <thead className="bg-gray-50 sticky top-0">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Código</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Nombre</th>
+                <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Precio</th>
+                <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Stock</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredProductos.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-12 text-center text-sm text-gray-400">
+                    No se encontraron productos
+                  </td>
+                </tr>
+              ) : (
+                filteredProductos.map((p) => (
+                  <tr
+                    key={p.id}
+                    onClick={() => addToCart(p)}
+                    className="cursor-pointer transition-colors hover:bg-blue-50"
+                  >
+                    <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-gray-500">{p.codigo}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900">{p.nombre}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-blue-600">
+                      ${p.precio_venta.toFixed(2)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-500">{p.stock}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
       {/* Panel derecho - Carrito */}
-      <div className="w-96 flex flex-col bg-white rounded-lg shadow-sm border p-4">
+      <div className="w-96 flex flex-col bg-white rounded-xl shadow-sm border p-4">
         <div className="flex items-center gap-2 mb-4">
           <ShoppingCart size={20} />
           <h3 className="font-semibold text-lg">Carrito</h3>
@@ -275,20 +278,6 @@ export default function PosPage() {
             Código: {codigoCarrito}
           </div>
         )}
-
-        {/* Selector de cliente */}
-        <select
-          className="input mb-4"
-          value={clienteId}
-          onChange={(e) => setClienteId(e.target.value)}
-        >
-          <option value="">Seleccionar cliente...</option>
-          {clientes.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nombre}
-            </option>
-          ))}
-        </select>
 
         {/* Items del carrito */}
         <div className="flex-1 overflow-y-auto space-y-2 mb-4">
@@ -357,7 +346,7 @@ export default function PosPage() {
         <button
           onClick={handleCheckout}
           disabled={carrito.length === 0}
-          className="btn btn-primary w-full mt-4 py-3 text-lg disabled:opacity-50"
+          className="w-full mt-4 py-3 text-lg rounded-lg bg-blue-600 font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
           Cobrar ${total.toFixed(2)}
         </button>

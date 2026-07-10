@@ -25,6 +25,8 @@ interface KanbanBoardProps {
   proyectoId: string;
   onMoverTarea: (tareaId: string, nuevaColumna: ColumnaKanban) => Promise<void>;
   onNuevaTarea: () => void;
+  onEditarTarea?: (tarea: TareaConAsignado) => void;
+  onEliminarTarea?: (tareaId: string) => void;
   loading?: boolean;
 }
 
@@ -35,7 +37,7 @@ const COLUMNAS: { id: ColumnaKanban; label: string; color: string }[] = [
   { id: "completadas", label: "Completadas", color: "border-t-green-500" },
 ];
 
-export default function KanbanBoard({ tareas, proyectoId, onMoverTarea, onNuevaTarea, loading }: KanbanBoardProps) {
+export default function KanbanBoard({ tareas, proyectoId, onMoverTarea, onNuevaTarea, onEditarTarea, onEliminarTarea, loading }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -143,7 +145,7 @@ export default function KanbanBoard({ tareas, proyectoId, onMoverTarea, onNuevaT
                         </div>
                       ) : (
                         items.map((tarea) => (
-                          <TareaCard key={tarea.id} tarea={tarea} />
+                          <TareaCard key={tarea.id} tarea={tarea} onEdit={onEditarTarea} onDelete={onEliminarTarea} />
                         ))
                       )}
                     </SortableContext>
@@ -155,8 +157,8 @@ export default function KanbanBoard({ tareas, proyectoId, onMoverTarea, onNuevaT
 
           <DragOverlay>
             {activeTarea ? (
-              <div className="opacity-80">
-                <TareaCard tarea={activeTarea} />
+            <div className="opacity-80">
+                <TareaCard tarea={activeTarea} onEdit={onEditarTarea} onDelete={onEliminarTarea} />
               </div>
             ) : null}
           </DragOverlay>

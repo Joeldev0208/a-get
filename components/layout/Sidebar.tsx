@@ -62,15 +62,6 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    label: "Facturación",
-    icon: ClipboardList,
-    children: [
-      { href: "/facturacion/clientes", label: "Clientes" },
-      { href: "/facturacion/facturas", label: "Facturas" },
-      { href: "/facturacion/pagos", label: "Pagos" },
-    ],
-  },
-  {
     label: "Sesiones",
     icon: Clock,
     children: [
@@ -89,7 +80,6 @@ const navSections: NavSection[] = [
     icon: Settings,
     children: [
       { href: "/configuracion/empresa", label: "Mi Empresa" },
-      { href: "/configuracion/usuarios", label: "Usuarios y Roles" },
     ],
   },
 ];
