@@ -28,6 +28,7 @@ export interface PerfilUsuario {
   empresa_id: string;
   rol: RolUsuario;
   activo: boolean;
+  nombre?: string;
   created_at: string;
   updated_at: string;
   empresas?: { nombre: string; codigo_unico: string } | null;

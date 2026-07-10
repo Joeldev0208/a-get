@@ -41,20 +41,20 @@ export default function UsuariosPage() {
 
       <div className="card">
         <table className="table">
-          <thead>
-            <tr>
-              <th>Usuario ID</th>
-              <th>Empresa</th>
-              <th>Rol</th>
-              <th>Estado</th>
-              {isGerente && <th>Acciones</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {perfiles.map((p) => (
-              <tr key={p.id}>
-                <td className="font-mono text-sm">{p.user_id.slice(0, 8)}...</td>
-                <td>{p.empresas?.nombre || "-"}</td>
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Empresa</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                    {isGerente && <th>Acciones</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {perfiles.map((p) => (
+                    <tr key={p.id}>
+                      <td className="text-sm">{p.nombre || 'Sin nombre'}</td>
+                      <td>{p.empresas?.nombre || "-"}</td>
                 <td>
                   {isGerente ? (
                     <select

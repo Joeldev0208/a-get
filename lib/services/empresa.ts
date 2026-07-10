@@ -118,14 +118,15 @@ export async function obtenerPerfilActual(): Promise<PerfilUsuario | null> {
 
     console.log("[obtenerPerfilActual] Empresa creada:", empresa);
 
-    // Crear perfil con rol de gerente (sin email, no existe en la tabla)
+    // Crear perfil con rol de gerente
     const { data: perfil, error: perfilError } = await supabase
       .from("perfiles_usuario")
       .insert({
         user_id: userId,
         empresa_id: empresa.id,
         rol: "gerente",
-        activo: true
+        activo: true,
+        nombre: email || `Usuario ${userId.slice(0, 8)}`
       })
       .select("*, empresas(nombre, codigo_unico)")
       .single();

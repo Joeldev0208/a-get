@@ -176,7 +176,7 @@ El schema completo está en `supabase-schema.sql`. Tablas clave:
 
 **Todas las tablas tienen** `empresa_id` para multiempresa y RLS habilitado.
 
-**Nota importante:** La tabla `perfiles_usuario` **NO** tiene columna `email`. No intentar insertar ese campo.
+**Nota importante:** La tabla `perfiles_usuario` tiene columna `nombre` (TEXT, opcional) para mostrar el nombre del usuario. No tiene columna `email`.
 
 ---
 
@@ -381,11 +381,28 @@ El schema completo está en `supabase-schema.sql`. Tablas clave:
 
 ```
 ITERACIÓN ACTUAL - ASEC-FIRST
-[ ] 1. POS: cambiar productos a lista + eliminar selector de cliente
-[ ] 2. Ventas/Clientes: estilos consistentes + buscador por nombre
-[ ] 3. Ventas/Facturas: estilos consistentes + buscador por código
-[ ] 4. Sidebar: eliminar sección Facturación (módulo duplicado)
-[ ] 5. Tareas: CRUD completo (editar/eliminar proyectos y tareas + comentarios)
+[x] 1. POS: cambiar productos a lista + eliminar selector de cliente
+[x] 2. Ventas/Clientes: estilos consistentes + buscador por nombre
+[x] 3. Ventas/Facturas: estilos consistentes + buscador por código
+[x] 4. Sidebar: eliminar sección Facturación (módulo duplicado)
+[x] 5. Tareas: CRUD completo (editar/eliminar proyectos y tareas + comentarios)
+[x] 6. Mi Empresa: corrección tipos, estilos, unificar Usuarios y Roles
+[x] 7. Agregar columna nombre a perfiles_usuario
+```
+
+## 8. Migraciones SQL Pendientes
+
+Después de actualizar el código, ejecutar en **Supabase SQL Editor**:
+
+```sql
+-- Agregar columna nombre a perfiles_usuario
+ALTER TABLE perfiles_usuario 
+ADD COLUMN IF NOT EXISTS nombre TEXT;
+
+-- Asignar nombres a usuarios existentes
+UPDATE perfiles_usuario 
+SET nombre = 'Usuario ' || LEFT(user_id::text, 8)
+WHERE nombre IS NULL;
 ```
 
 ---

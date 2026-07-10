@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS perfiles_usuario (
   empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
   rol rol_usuario NOT NULL DEFAULT 'empleado_general',
   activo BOOLEAN NOT NULL DEFAULT TRUE,
+  nombre TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(user_id, empresa_id)

@@ -198,7 +198,7 @@ export default function EmpresaPage() {
               <table className="min-w-full divide-y divide-gray-200 text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Usuario</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Nombre</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Rol</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Estado</th>
                   </tr>
@@ -213,8 +213,8 @@ export default function EmpresaPage() {
                   ) : (
                     perfiles.map((p) => (
                       <tr key={p.id} className="hover:bg-gray-50">
-                        <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-gray-500">
-                          {p.user_id.slice(0, 8)}...
+                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
+                          {p.nombre || 'Sin nombre'}
                         </td>
                         <td className="whitespace-nowrap px-4 py-3">
                           {isGerente ? (
