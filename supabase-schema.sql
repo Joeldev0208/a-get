@@ -113,7 +113,6 @@ CREATE TABLE IF NOT EXISTS facturas (
 CREATE TABLE IF NOT EXISTS detalles_factura (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   factura_id UUID NOT NULL REFERENCES facturas(id) ON DELETE CASCADE,
-  producto_id UUID REFERENCES productos(id) ON DELETE SET NULL,
   descripcion TEXT NOT NULL,
   cantidad INTEGER NOT NULL DEFAULT 1,
   precio_unitario DECIMAL(12,2) NOT NULL DEFAULT 0,

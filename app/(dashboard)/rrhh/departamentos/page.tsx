@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import PageHeader from "@/components/layout/PageHeader";
 import Loading from "@/components/ui/Loading";
 import EmptyState from "@/components/ui/EmptyState";
@@ -8,14 +8,25 @@ import ErrorBox from "@/components/ui/ErrorBox";
 import Modal from "@/components/ui/Modal";
 import FormField from "@/components/ui/FormField";
 import SubmitButton from "@/components/ui/SubmitButton";
-import { listarDepartamentos, crearDepartamento, actualizarDepartamento, eliminarDepartamento } from "@/lib/services/rrhh.service";
+import {
+  listarDepartamentos, crearDepartamento, actualizarDepartamento, eliminarDepartamento
+} from "@/lib/services/rrhh.service";
 import { ServiceError } from "@/lib/services/supabase-service";
+import { obtenerPerfilActual } from "@/lib/services/empresa";
 import type { Departamento } from "@/lib/types/rrhh";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
-// ── Formulario Departamento ─────────────────────────────────────
-function DepartamentoForm({ isOpen, onClose, onSuccess, departamento }: { isOpen: boolean; onClose: () => void; onSuccess: () => void; departamento?: Departamento | null }) {
+// ── Formulario de Departamento (Crear / Editar) ─────────────────
+interface DepartamentoFormProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  empresaId: string;
+  departamento?: Departamento | null;
+}
+
+function DepartamentoForm({ isOpen, onClose, onSuccess, empresaId, departamento }: DepartamentoFormProps) {
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,13 +44,19 @@ function DepartamentoForm({ isOpen, onClose, onSuccess, departamento }: { isOpen
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombre.trim()) { setError("El nombre es obligatorio"); return; }
+
     try {
       setLoading(true);
       setError(null);
-      if (esEdicion) {
-        await actualizarDepartamento(departamento!.id, { nombre: nombre.trim(), descripcion: descripcion.trim() || null });
+      const payload = {
+        nombre: nombre.trim(),
+        descripcion: descripcion.trim() || null,
+      };
+
+      if (esEdicion && departamento) {
+        await actualizarDepartamento(departamento.id, payload);
       } else {
-        await crearDepartamento({ nombre: nombre.trim(), descripcion: descripcion.trim() || null });
+        await crearDepartamento(payload);
       }
       onSuccess();
       onClose();
@@ -51,14 +68,50 @@ function DepartamentoForm({ isOpen, onClose, onSuccess, departamento }: { isOpen
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={esEdicion ? "Editar Departamento" : "Nuevo Departamento"} size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title={esEdicion ? "Editar Departamento" : "Nuevo Departamento"} size="sm">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <FormField label="Nombre" name="nombre" value={nombre} onChange={setNombre} required placeholder="Ej: Tecnología" />
-        <FormField label="Descripción" name="descripcion" type="textarea" value={descripcion} onChange={setDescripcion} placeholder="Descripción (opcional)" />
+        <FormField label="Nombre *" name="nombre" value={nombre} onChange={setNombre} required placeholder="Nombre del departamento" />
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-gray-700">Descripción</label>
+          <textarea
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+            placeholder="Descripción opcional..."
+            rows={3}
+            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
         {error && <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</div>}
-        <SubmitButton loading={loading} text={esEdicion ? "Actualizar" : "Crear"} />
+        <SubmitButton loading={loading} text={esEdicion ? "Actualizar Departamento" : "Crear Departamento"} />
       </form>
     </Modal>
+  );
+}
+
+// ── Botón wrapper: Nuevo ────────────────────────────────────────
+function NuevoDeptoBtn({ onSuccess, empresaId }: { onSuccess: () => void; empresaId: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <>
+      <button onClick={() => setIsOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700">
+        <Plus size={16} />
+        Nuevo Departamento
+      </button>
+      <DepartamentoForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} empresaId={empresaId} />
+    </>
+  );
+}
+
+// ── Botón de editar ─────────────────────────────────────────────
+function EditarDeptoBtn({ departamento, onSuccess, empresaId }: { departamento: Departamento; onSuccess: () => void; empresaId: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <>
+      <button onClick={() => setIsOpen(true)} className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-blue-600">
+        <Pencil size={16} />
+      </button>
+      <DepartamentoForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} empresaId={empresaId} departamento={departamento} />
+    </>
   );
 }
 
@@ -67,20 +120,23 @@ export default function DepartamentosPage() {
   const [data, setData] = useState<Departamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
-  const [editing, setEditing] = useState<Departamento | null>(null);
+  const [empresaId, setEmpresaId] = useState<string>("");
 
   // Confirm dialog
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTitle, setConfirmTitle] = useState("");
-  const [confirmMessage, setConfirmMessage] = useState("");
-  const [confirmSkipKey, setConfirmSkipKey] = useState("");
   const [deptoToDelete, setDeptoToDelete] = useState<string | null>(null);
 
-  const cargarDatos = async () => {
+  const cargarDatos = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+      
+      const perfil = await obtenerPerfilActual();
+      if (!perfil) {
+        throw new Error("No se pudo obtener el perfil de usuario");
+      }
+      setEmpresaId(perfil.empresa_id);
+      
       const deptos = await listarDepartamentos();
       setData(deptos);
     } catch (err) {
@@ -88,28 +144,11 @@ export default function DepartamentosPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { cargarDatos(); }, []);
+  useEffect(() => { cargarDatos(); }, [cargarDatos]);
 
-  if (loading) return <Loading />;
-  if (error) return <ErrorBox error={error} onRetry={cargarDatos} />;
-
-  const handleNuevo = () => { setEditing(null); setIsOpen(true); };
-  const handleEditar = (d: Departamento) => { setEditing(d); setIsOpen(true); };
-  const handleClose = () => { setIsOpen(false); setEditing(null); };
-  const handleSuccess = () => { cargarDatos(); };
-
-  const handleEliminar = async (id: string) => {
-    const skipKey = "aget_confirm_skip_departamento";
-    if (localStorage.getItem(skipKey) === "true") {
-      await eliminarDepartamento(id);
-      cargarDatos();
-      return;
-    }
-    setConfirmTitle("Eliminar Departamento");
-    setConfirmMessage("¿Estás seguro de eliminar este departamento? Esta acción no se puede deshacer.");
-    setConfirmSkipKey(skipKey);
+  const handleEliminar = (id: string) => {
     setDeptoToDelete(id);
     setConfirmOpen(true);
   };
@@ -122,18 +161,24 @@ export default function DepartamentosPage() {
     }
   };
 
+  if (loading) return <Loading />;
+  if (error) return <ErrorBox error={error} onRetry={cargarDatos} />;
+
   return (
     <div>
-      <PageHeader title="Departamentos" actions={
-        <button onClick={handleNuevo} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700">
-          <Plus size={16} /> Nuevo Departamento
-        </button>
-      } />
+      <PageHeader
+        title="Departamentos"
+        actions={
+          <NuevoDeptoBtn onSuccess={cargarDatos} empresaId={empresaId} />
+        }
+      />
 
       {data.length === 0 ? (
-        <EmptyState title="No hay departamentos" description="Crea tu primer departamento para organizar tu equipo." action={
-          <button onClick={handleNuevo} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"><Plus size={16} /> Nuevo Departamento</button>
-        } />
+        <EmptyState
+          title="No hay departamentos registrados"
+          description="Crea tu primer departamento para comenzar a organizar tu equipo."
+          action={<NuevoDeptoBtn onSuccess={cargarDatos} empresaId={empresaId} />}
+        />
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">
@@ -145,13 +190,18 @@ export default function DepartamentosPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {data.map((d) => (
-                <tr key={d.id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{d.nombre}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{d.descripcion || "—"}</td>
+              {data.map((depto) => (
+                <tr key={depto.id} className="hover:bg-gray-50">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{depto.nombre}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{depto.descripcion || "—"}</td>
                   <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
-                    <button onClick={() => handleEditar(d)} className="mr-2 rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-blue-600"><Pencil size={16} /></button>
-                    <button onClick={() => handleEliminar(d.id)} className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-600"><Trash2 size={16} /></button>
+                    <EditarDeptoBtn departamento={depto} onSuccess={cargarDatos} empresaId={empresaId} />
+                    <button
+                      onClick={() => handleEliminar(depto.id)}
+                      className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-600"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -164,15 +214,12 @@ export default function DepartamentosPage() {
         isOpen={confirmOpen}
         onClose={() => { setConfirmOpen(false); setDeptoToDelete(null); }}
         onConfirm={confirmarEliminar}
-        title={confirmTitle}
-        message={confirmMessage}
+        title="Eliminar Departamento"
+        message="¿Estás seguro de eliminar este departamento? Los empleados asociados quedarán sin departamento."
         confirmText="Eliminar"
         cancelText="Cancelar"
         variant="danger"
-        skipKey={confirmSkipKey}
       />
-
-      <DepartamentoForm isOpen={isOpen} onClose={handleClose} onSuccess={handleSuccess} departamento={editing} />
     </div>
   );
 }

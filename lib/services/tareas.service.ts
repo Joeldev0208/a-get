@@ -19,13 +19,20 @@ import type {
 
 export async function listarProyectos(): Promise<Proyecto[]> {
   return fromSupabaseList(
-    supabase.from("proyectos").select("*").order("created_at", { ascending: false })
+    supabase
+      .from("proyectos")
+      .select("*")
+      .order("created_at", { ascending: false })
   );
 }
 
 export async function obtenerProyecto(id: string): Promise<Proyecto> {
   return fromSupabaseSingle(
-    supabase.from("proyectos").select("*").eq("id", id).single()
+    supabase
+      .from("proyectos")
+      .select("*")
+      .eq("id", id)
+      .single()
   );
 }
 
@@ -40,12 +47,21 @@ export async function actualizarProyecto(
   input: Partial<ProyectoInput>
 ): Promise<Proyecto> {
   return fromSupabaseSingle(
-    supabase.from("proyectos").update(input).eq("id", id).select("*").single()
+    supabase
+      .from("proyectos")
+      .update(input)
+      .eq("id", id)
+      .select("*")
+      .single()
   );
 }
 
 export async function eliminarProyecto(id: string): Promise<void> {
-  const { error } = await supabase.from("proyectos").delete().eq("id", id);
+  const { error } = await supabase
+    .from("proyectos")
+    .delete()
+    .eq("id", id);
+
   if (error) {
     throw new Error(error.message);
   }
@@ -104,7 +120,12 @@ export async function actualizarTarea(
   input: Partial<TareaInput>
 ): Promise<Tarea> {
   return fromSupabaseSingle(
-    supabase.from("tareas").update(input).eq("id", id).select("*").single()
+    supabase
+      .from("tareas")
+      .update(input)
+      .eq("id", id)
+      .select("*")
+      .single()
   );
 }
 
@@ -124,7 +145,11 @@ export async function moverTarea(
 }
 
 export async function eliminarTarea(id: string): Promise<void> {
-  const { error } = await supabase.from("tareas").delete().eq("id", id);
+  const { error } = await supabase
+    .from("tareas")
+    .delete()
+    .eq("id", id);
+
   if (error) {
     throw new Error(error.message);
   }
@@ -149,7 +174,11 @@ export async function crearComentario(input: ComentarioInput): Promise<Comentari
 }
 
 export async function eliminarComentario(id: string): Promise<void> {
-  const { error } = await supabase.from("comentarios").delete().eq("id", id);
+  const { error } = await supabase
+    .from("comentarios")
+    .delete()
+    .eq("id", id);
+
   if (error) {
     throw new Error(error.message);
   }

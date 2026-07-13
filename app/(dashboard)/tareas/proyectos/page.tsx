@@ -17,6 +17,7 @@ import {
 } from "@/lib/services/tareas.service";
 import { listarEmpleados } from "@/lib/services/rrhh.service";
 import { ServiceError } from "@/lib/services/supabase-service";
+import { obtenerPerfilActual } from "@/lib/services/empresa";
 import type { Proyecto, TareaConAsignado, ColumnaKanban, Comentario } from "@/lib/types/tareas";
 import type { Empleado } from "@/lib/types/rrhh";
 import { Pencil, Trash2, MessageSquare, Send } from "lucide-react";
@@ -313,7 +314,12 @@ export default function ProyectosPage() {
     try {
       setLoading(true);
       setError(null);
-      const [proys, emps] = await Promise.all([listarProyectos(), listarEmpleados()]);
+      
+      const [proys, emps] = await Promise.all([
+        listarProyectos(),
+        listarEmpleados()
+      ]);
+      
       setProyectos(proys);
       setEmpleados(emps);
       if (proys.length > 0 && !selectedProyectoId) {
@@ -331,6 +337,7 @@ export default function ProyectosPage() {
   const recargarTareas = useCallback(async () => {
     if (!selectedProyectoId) return;
     setLoadingTareas(true);
+    
     const ts = await listarTareas(selectedProyectoId);
     setTareas(ts);
     setLoadingTareas(false);

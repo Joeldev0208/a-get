@@ -5,6 +5,7 @@ import Modal from "@/components/ui/Modal";
 import FormField from "@/components/ui/FormField";
 import SubmitButton from "@/components/ui/SubmitButton";
 import { abrirSesion, cerrarSesion } from "@/lib/services/sesiones.service";
+import { obtenerPerfilActual } from "@/lib/services/empresa";
 import type { SesionConUsuario } from "@/lib/types/sesiones";
 
 interface SesionFormProps {
@@ -40,13 +41,18 @@ export default function SesionForm({ isOpen, onClose, onSuccess, sesion }: Sesio
       setLoading(true);
       setError(null);
 
+      const perfil = await obtenerPerfilActual();
+      if (!perfil) {
+        throw new Error("No se pudo obtener el perfil de usuario");
+      }
+
       if (esApertura) {
-        await abrirSesion({
+        await abrirSesion(perfil.empresa_id, {
           total_inicial: Number(totalInicial) || 0,
           observaciones: observaciones.trim() || null,
         });
       } else if (esCierre) {
-        await cerrarSesion(sesion.id, {
+        await cerrarSesion(sesion.id, perfil.empresa_id, {
           total_final: Number(totalFinal) || 0,
           observaciones: observaciones.trim() || null,
         });

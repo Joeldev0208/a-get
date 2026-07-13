@@ -113,10 +113,9 @@ export async function crearFactura(
     throw new Error(`Error al crear factura: No se pudo generar un número único después de 3 intentos`);
   }
 
-  // Crear detalles
+  // Crear detalles (sin producto_id porque la tabla no tiene esa columna)
   const detalles = data.detalles.map((d) => ({
     factura_id: factura.id,
-    producto_id: d.producto_id || null,
     descripcion: d.descripcion,
     cantidad: d.cantidad,
     precio_unitario: d.precio_unitario,

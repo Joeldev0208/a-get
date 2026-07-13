@@ -13,6 +13,7 @@ import {
   listarDepartamentos, listarAsistencia, registrarAsistencia
 } from "@/lib/services/rrhh.service";
 import { ServiceError } from "@/lib/services/supabase-service";
+import { obtenerPerfilActual } from "@/lib/services/empresa";
 import type { Departamento, EmpleadoConDepartamento, AsistenciaConEmpleado, EstadoAsistencia } from "@/lib/types/rrhh";
 import { Plus, Pencil, Trash2, Search, Download, Upload, ClipboardCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -23,11 +24,12 @@ interface EmpleadoFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  empresaId: string;
   departamentos: Departamento[];
   empleado?: EmpleadoConDepartamento | null;
 }
 
-function EmpleadoForm({ isOpen, onClose, onSuccess, departamentos, empleado }: EmpleadoFormProps) {
+function EmpleadoForm({ isOpen, onClose, onSuccess, empresaId, departamentos, empleado }: EmpleadoFormProps) {
   const router = useRouter();
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
@@ -116,7 +118,7 @@ function EmpleadoForm({ isOpen, onClose, onSuccess, departamentos, empleado }: E
 }
 
 // ── Botón wrapper: Nuevo ────────────────────────────────────────
-function NuevoEmpleadoBtn({ onSuccess, departamentos }: { onSuccess: () => void; departamentos: Departamento[] }) {
+function NuevoEmpleadoBtn({ onSuccess, empresaId, departamentos }: { onSuccess: () => void; empresaId: string; departamentos: Departamento[] }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
@@ -124,20 +126,20 @@ function NuevoEmpleadoBtn({ onSuccess, departamentos }: { onSuccess: () => void;
         <Plus size={16} />
         Nuevo Empleado
       </button>
-      <EmpleadoForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} departamentos={departamentos} />
+      <EmpleadoForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} empresaId={empresaId} departamentos={departamentos} />
     </>
   );
 }
 
 // ── Botón de editar ─────────────────────────────────────────────
-function EditarEmpleadoBtn({ empleado, onSuccess, departamentos }: { empleado: EmpleadoConDepartamento; onSuccess: () => void; departamentos: Departamento[] }) {
+function EditarEmpleadoBtn({ empleado, onSuccess, empresaId, departamentos }: { empleado: EmpleadoConDepartamento; onSuccess: () => void; empresaId: string; departamentos: Departamento[] }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
       <button onClick={() => setIsOpen(true)} className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-blue-600">
         <Pencil size={16} />
       </button>
-      <EmpleadoForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} departamentos={departamentos} empleado={empleado} />
+      <EmpleadoForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} empresaId={empresaId} departamentos={departamentos} empleado={empleado} />
     </>
   );
 }
@@ -150,6 +152,7 @@ export default function EmpleadosPage() {
   const [asistencia, setAsistencia] = useState<AsistenciaConEmpleado[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [empresaId, setEmpresaId] = useState<string>("");
 
   // Búsqueda
   const [searchTerm, setSearchTerm] = useState("");
@@ -166,6 +169,7 @@ export default function EmpleadosPage() {
     try {
       setLoading(true);
       setError(null);
+      
       const [empleados, deptos, asistencias] = await Promise.all([
         listarEmpleados(),
         listarDepartamentos(),
@@ -300,7 +304,7 @@ export default function EmpleadosPage() {
         title="Empleados"
         actions={
           <div className="flex items-center gap-2">
-            <NuevoEmpleadoBtn onSuccess={cargarDatos} departamentos={departamentos} />
+            <NuevoEmpleadoBtn onSuccess={cargarDatos} empresaId={empresaId} departamentos={departamentos} />
             <button onClick={() => router.push("/rrhh/departamentos")} className="inline-flex items-center gap-2 rounded-lg border border-blue-300 bg-white px-4 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-50">
               Departamentos
             </button>
@@ -331,7 +335,7 @@ export default function EmpleadosPage() {
         <EmptyState
           title="No hay empleados registrados"
           description="Crea tu primer empleado para comenzar a gestionar tu equipo."
-          action={<NuevoEmpleadoBtn onSuccess={cargarDatos} departamentos={departamentos} />}
+          action={<NuevoEmpleadoBtn onSuccess={cargarDatos} empresaId={empresaId} departamentos={departamentos} />}
         />
       ) : (
         <>
@@ -370,7 +374,7 @@ export default function EmpleadosPage() {
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
-                        <EditarEmpleadoBtn empleado={empleado} onSuccess={cargarDatos} departamentos={departamentos} />
+                        <EditarEmpleadoBtn empleado={empleado} onSuccess={cargarDatos} empresaId={empresaId} departamentos={departamentos} />
                         <button
                           data-emp-id={empleado.id}
                           onClick={() => handleEliminar(empleado.id)}

@@ -9,6 +9,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import SesionForm from "@/components/sesiones/SesionForm";
 import { listarSesiones, eliminarSesion, obtenerSesionAbierta } from "@/lib/services/sesiones.service";
 import { ServiceError } from "@/lib/services/supabase-service";
+import { obtenerPerfilActual } from "@/lib/services/empresa";
 import type { SesionConUsuario } from "@/lib/types/sesiones";
 import { Plus, XCircle, Trash2, Clock } from "lucide-react";
 
@@ -17,6 +18,7 @@ export default function SesionesPage() {
   const [sesionAbierta, setSesionAbierta] = useState<SesionConUsuario | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [empresaId, setEmpresaId] = useState<string>("");
 
   // Modal
   const [modalOpen, setModalOpen] = useState(false);
@@ -30,9 +32,16 @@ export default function SesionesPage() {
     try {
       setLoading(true);
       setError(null);
+      
+      const perfil = await obtenerPerfilActual();
+      if (!perfil) {
+        throw new Error("No se pudo obtener el perfil de usuario");
+      }
+      setEmpresaId(perfil.empresa_id);
+      
       const [sesiones, abierta] = await Promise.all([
-        listarSesiones(),
-        obtenerSesionAbierta(),
+        listarSesiones(perfil.empresa_id),
+        obtenerSesionAbierta(perfil.empresa_id),
       ]);
       setData(sesiones);
       setSesionAbierta(abierta);
@@ -67,7 +76,7 @@ export default function SesionesPage() {
 
   const confirmarEliminar = async () => {
     if (sesionToDelete) {
-      await eliminarSesion(sesionToDelete);
+      await eliminarSesion(sesionToDelete, empresaId);
       cargarDatos();
       setSesionToDelete(null);
     }
