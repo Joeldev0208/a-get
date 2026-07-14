@@ -164,7 +164,57 @@ export async function actualizarRol(perfilId: string, rol: RolUsuario): Promise<
   if (error) throw new Error(`Error al actualizar rol: ${error.message}`);
 }
 
+export async function buscarPerfilActual(): Promise<PerfilUsuario | null> {
+  // Obtener userId
+  const { data: { session } } = await supabase.auth.getSession();
+  const userId = session?.user?.id;
+  if (!userId) return null;
+
+  // Buscar perfil existente SIN crear automáticamente
+  const { data } = await supabase
+    .from("perfiles_usuario")
+    .select("*, empresas(nombre, codigo_unico)")
+    .eq("user_id", userId)
+    .eq("activo", true)
+    .single();
+
+  return data || null;
+}
+
 export async function actualizarEmpresa(id: string, data: Partial<EmpresaInput>): Promise<void> {
   const { error } = await supabase.from("empresas").update(data).eq("id", id);
   if (error) throw new Error(`Error al actualizar empresa: ${error.message}`);
+}
+
+export async function unirseAEmpresa(codigo: string, userId: string): Promise<PerfilUsuario> {
+  // Buscar empresa por código
+  const empresa = await obtenerEmpresaPorCodigo(codigo);
+  if (!empresa) {
+    throw new Error("Código de empresa inválido. Verifica el código e intenta de nuevo.");
+  }
+
+  // Verificar si el usuario ya tiene un perfil en esta empresa
+  const { data: perfilExistente } = await supabase
+    .from("perfiles_usuario")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("empresa_id", empresa.id)
+    .single();
+
+  if (perfilExistente) {
+    throw new Error("Ya eres miembro de esta empresa.");
+  }
+
+  // Obtener email del usuario
+  const { data: { user } } = await supabase.auth.getUser();
+  const userEmail = user?.email || "usuario@example.com";
+
+  // Crear perfil con rol de empleado general
+  return crearPerfil({
+    user_id: userId,
+    empresa_id: empresa.id,
+    rol: "empleado_general",
+    activo: true,
+    nombre: userEmail || `Usuario ${userId.slice(0, 8)}`
+  });
 }

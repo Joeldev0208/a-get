@@ -39,6 +39,7 @@ export interface PerfilUsuarioInput {
   empresa_id: string;
   rol: RolUsuario;
   activo?: boolean;
+  nombre?: string;
 }
 
 export const ROLES_LABELS: Record<RolUsuario, string> = {
