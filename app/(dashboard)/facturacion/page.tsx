@@ -13,20 +13,15 @@ import {
   crearCliente,
   actualizarCliente,
   eliminarCliente,
-} from "@/lib/services/facturacion.service";
-import {
   listarFacturas,
   crearFactura,
   crearDetalle,
   actualizarFactura,
   eliminarFactura,
   eliminarDetalle,
-} from "@/lib/services/facturacion.service";
-import {
   listarPagos,
   crearPago,
   eliminarPago,
-  listarFacturas as listarFacturasParaPagos,
 } from "@/lib/services/facturacion.service";
 import type {
   Cliente,
@@ -39,13 +34,13 @@ import {
   Plus,
   Pencil,
   Trash2,
-  Eye,
   X,
   Receipt,
   Users,
   CreditCard,
 } from "lucide-react";
 import { ServiceError } from "@/lib/services/supabase-service";
+import { obtenerPerfilActual } from "@/lib/services/empresa";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 type Tab = "clientes" | "facturas" | "pagos";
@@ -63,6 +58,13 @@ const estadoStyles: Record<string, string> = {
   cancelada: "bg-gray-100 text-gray-800",
 };
 
+const metodoStyles: Record<string, string> = {
+  efectivo: "bg-green-100 text-green-800",
+  transferencia: "bg-blue-100 text-blue-800",
+  tarjeta: "bg-purple-100 text-purple-800",
+  cheque: "bg-yellow-100 text-yellow-800",
+};
+
 const TASA_IMPUESTO = 0.18;
 
 // ── Formulario Cliente (Crear / Editar) ────────────────────────
@@ -70,11 +72,13 @@ function ClienteForm({
   isOpen,
   onClose,
   onSuccess,
+  empresaId,
   cliente,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  empresaId: string;
   cliente?: Cliente | null;
 }) {
   const [nombre, setNombre] = useState("");
@@ -110,7 +114,7 @@ function ClienteForm({
       setLoading(true);
       setError(null);
       if (esEdicion) {
-        await actualizarCliente(cliente!.id, {
+        await actualizarCliente(cliente!.id, empresaId, {
           nombre: nombre.trim(),
           email: email.trim() || null,
           telefono: telefono.trim() || null,
@@ -118,7 +122,7 @@ function ClienteForm({
           rnc_cedula: rncCedula.trim() || null,
         });
       } else {
-        await crearCliente({
+        await crearCliente(empresaId, {
           nombre: nombre.trim(),
           email: email.trim() || null,
           telefono: telefono.trim() || null,
@@ -165,12 +169,14 @@ function FacturaForm({
   onClose,
   onSuccess,
   clientes,
+  empresaId,
   factura,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
   clientes: Cliente[];
+  empresaId: string;
   factura?: FacturaConCliente | null;
 }) {
   const [numero, setNumero] = useState("");
@@ -239,7 +245,7 @@ function FacturaForm({
 
       if (esEdicion) {
         // Actualizar factura
-        await actualizarFactura(factura!.id, {
+        await actualizarFactura(factura!.id, empresaId, {
           numero: numero.trim(),
           cliente_id: clienteId,
           subtotal: Math.round(subtotal * 100) / 100,
@@ -264,7 +270,7 @@ function FacturaForm({
         }
       } else {
         // Crear factura nueva
-        const facturaCreada = await crearFactura({
+        const facturaCreada = await crearFactura(empresaId, {
           numero: numero.trim(),
           cliente_id: clienteId,
           subtotal: Math.round(subtotal * 100) / 100,
@@ -335,7 +341,7 @@ function FacturaForm({
 }
 
 // ── Formulario Pago (Crear) ─────────────────────────────────────
-function PagoForm({ isOpen, onClose, onSuccess, facturas }: { isOpen: boolean; onClose: () => void; onSuccess: () => void; facturas: Factura[] }) {
+function PagoForm({ isOpen, onClose, onSuccess, facturas, empresaId }: { isOpen: boolean; onClose: () => void; onSuccess: () => void; facturas: Factura[]; empresaId: string }) {
   const [facturaId, setFacturaId] = useState("");
   const [monto, setMonto] = useState("");
   const [metodo, setMetodo] = useState("efectivo");
@@ -351,7 +357,7 @@ function PagoForm({ isOpen, onClose, onSuccess, facturas }: { isOpen: boolean; o
     try {
       setLoading(true);
       setError(null);
-      await crearPago({ factura_id: facturaId, monto: Number(monto), metodo: metodo as any, referencia: referencia.trim() || null, fecha_pago: fechaPago });
+      await crearPago(empresaId, { factura_id: facturaId, monto: Number(monto), metodo: metodo as any, referencia: referencia.trim() || null, fecha_pago: fechaPago });
       onSuccess();
       onClose();
       setFacturaId(""); setMonto(""); setMetodo("efectivo"); setReferencia("");
@@ -386,6 +392,7 @@ export default function FacturacionPage() {
   const [facturasParaPago, setFacturasParaPago] = useState<Factura[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [empresaId, setEmpresaId] = useState<string>("");
 
   // Modales
   const [showModalCliente, setShowModalCliente] = useState(false);
@@ -405,7 +412,15 @@ export default function FacturacionPage() {
     try {
       setLoading(true);
       setError(null);
-      const [clts, facs, pgs, facsPago] = await Promise.all([listarClientes(), listarFacturas(), listarPagos(), listarFacturasParaPagos()]);
+      const perfil = await obtenerPerfilActual();
+      if (!perfil) throw new Error("No se pudo obtener el perfil de usuario");
+      setEmpresaId(perfil.empresa_id);
+      const [clts, facs, pgs, facsPago] = await Promise.all([
+        listarClientes(perfil.empresa_id),
+        listarFacturas(perfil.empresa_id),
+        listarPagos(perfil.empresa_id),
+        listarFacturas(perfil.empresa_id),
+      ]);
       setClientes(clts);
       setFacturas(facs);
       setPagos(pgs);
@@ -425,7 +440,7 @@ export default function FacturacionPage() {
   const handleEliminarCliente = async (id: string) => {
     const skipKey = "aget_confirm_skip_cliente";
     if (localStorage.getItem(skipKey) === "true") {
-      await eliminarCliente(id);
+      await eliminarCliente(id, empresaId);
       cargarDatos();
       return;
     }
@@ -434,7 +449,7 @@ export default function FacturacionPage() {
     setConfirmSkipKey(skipKey);
     confirmActionRef.current = async () => {
       try {
-        await eliminarCliente(id);
+        await eliminarCliente(id, empresaId);
         cargarDatos();
       } catch (err) {
         alert("Error al eliminar cliente");
@@ -446,7 +461,7 @@ export default function FacturacionPage() {
   const handleEliminarFactura = async (id: string) => {
     const skipKey = "aget_confirm_skip_factura";
     if (localStorage.getItem(skipKey) === "true") {
-      await eliminarFactura(id);
+      await eliminarFactura(id, empresaId);
       cargarDatos();
       return;
     }
@@ -455,7 +470,7 @@ export default function FacturacionPage() {
     setConfirmSkipKey(skipKey);
     confirmActionRef.current = async () => {
       try {
-        await eliminarFactura(id);
+        await eliminarFactura(id, empresaId);
         cargarDatos();
       } catch (err) {
         alert("Error al eliminar factura");
@@ -467,7 +482,7 @@ export default function FacturacionPage() {
   const handleEliminarPago = async (id: string) => {
     const skipKey = "aget_confirm_skip_pago";
     if (localStorage.getItem(skipKey) === "true") {
-      await eliminarPago(id);
+      await eliminarPago(id, empresaId);
       cargarDatos();
       return;
     }
@@ -476,7 +491,7 @@ export default function FacturacionPage() {
     setConfirmSkipKey(skipKey);
     confirmActionRef.current = async () => {
       try {
-        await eliminarPago(id);
+        await eliminarPago(id, empresaId);
         cargarDatos();
       } catch (err) {
         alert("Error al eliminar pago");
@@ -624,7 +639,7 @@ export default function FacturacionPage() {
                       <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{pago.facturas?.numero || "—"}</td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{new Date(pago.fecha_pago).toLocaleDateString("es-DO")}</td>
                       <td className="whitespace-nowrap px-6 py-4">
-                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${estadoStyles[pago.metodo]}`}>{pago.metodo}</span>
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${metodoStyles[pago.metodo]}`}>{pago.metodo}</span>
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-semibold text-gray-900">${pago.monto.toLocaleString()}</td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{pago.referencia || "—"}</td>
@@ -663,6 +678,7 @@ export default function FacturacionPage() {
         isOpen={showModalCliente}
         onClose={() => { setShowModalCliente(false); setEditingCliente(null); }}
         onSuccess={cargarDatos}
+        empresaId={empresaId}
         cliente={editingCliente}
       />
       <FacturaForm
@@ -670,9 +686,10 @@ export default function FacturacionPage() {
         onClose={() => { setShowModalFactura(false); setEditingFactura(null); }}
         onSuccess={cargarDatos}
         clientes={clientes}
+        empresaId={empresaId}
         factura={editingFactura}
       />
-      <PagoForm isOpen={showModalPago} onClose={() => setShowModalPago(false)} onSuccess={cargarDatos} facturas={facturasParaPago} />
+      <PagoForm isOpen={showModalPago} onClose={() => setShowModalPago(false)} onSuccess={cargarDatos} facturas={facturasParaPago} empresaId={empresaId} />
     </div>
   );
 }

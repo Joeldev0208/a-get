@@ -10,40 +10,38 @@ import type {
   ComentarioInput,
 } from "@/lib/types/tareas";
 
-// ============================================================
-// Servicio: Tareas
-// CRUD: Proyectos, Tareas, Comentarios
-// ============================================================
-
 // ---- Proyectos ----
 
-export async function listarProyectos(): Promise<Proyecto[]> {
+export async function listarProyectos(empresaId: string): Promise<Proyecto[]> {
   return fromSupabaseList(
     supabase
       .from("proyectos")
       .select("*")
+      .eq("empresa_id", empresaId)
       .order("created_at", { ascending: false })
   );
 }
 
-export async function obtenerProyecto(id: string): Promise<Proyecto> {
+export async function obtenerProyecto(id: string, empresaId: string): Promise<Proyecto> {
   return fromSupabaseSingle(
     supabase
       .from("proyectos")
       .select("*")
       .eq("id", id)
+      .eq("empresa_id", empresaId)
       .single()
   );
 }
 
-export async function crearProyecto(input: ProyectoInput): Promise<Proyecto> {
+export async function crearProyecto(empresaId: string, input: ProyectoInput): Promise<Proyecto> {
   return fromSupabaseSingle(
-    supabase.from("proyectos").insert(input).select("*").single()
+    supabase.from("proyectos").insert({ ...input, empresa_id: empresaId }).select("*").single()
   );
 }
 
 export async function actualizarProyecto(
   id: string,
+  empresaId: string,
   input: Partial<ProyectoInput>
 ): Promise<Proyecto> {
   return fromSupabaseSingle(
@@ -51,16 +49,18 @@ export async function actualizarProyecto(
       .from("proyectos")
       .update(input)
       .eq("id", id)
+      .eq("empresa_id", empresaId)
       .select("*")
       .single()
   );
 }
 
-export async function eliminarProyecto(id: string): Promise<void> {
+export async function eliminarProyecto(id: string, empresaId: string): Promise<void> {
   const { error } = await supabase
     .from("proyectos")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("empresa_id", empresaId);
 
   if (error) {
     throw new Error(error.message);
@@ -69,10 +69,11 @@ export async function eliminarProyecto(id: string): Promise<void> {
 
 // ---- Tareas (Kanban) ----
 
-export async function listarTareas(proyectoId?: string): Promise<TareaConAsignado[]> {
+export async function listarTareas(empresaId: string, proyectoId?: string): Promise<TareaConAsignado[]> {
   let query = supabase
     .from("tareas")
     .select("*, empleados(nombre), proyectos(nombre)")
+    .eq("empresa_id", empresaId)
     .order("orden");
 
   if (proyectoId) {
@@ -83,12 +84,14 @@ export async function listarTareas(proyectoId?: string): Promise<TareaConAsignad
 }
 
 export async function listarTareasPorColumna(
+  empresaId: string,
   columna: string,
   proyectoId?: string
 ): Promise<TareaConAsignado[]> {
   let query = supabase
     .from("tareas")
     .select("*, empleados(nombre), proyectos(nombre)")
+    .eq("empresa_id", empresaId)
     .eq("columna", columna)
     .order("orden");
 
@@ -99,24 +102,26 @@ export async function listarTareasPorColumna(
   return fromSupabaseList(query);
 }
 
-export async function obtenerTarea(id: string): Promise<TareaConAsignado> {
+export async function obtenerTarea(id: string, empresaId: string): Promise<TareaConAsignado> {
   return fromSupabaseSingle(
     supabase
       .from("tareas")
       .select("*, empleados(nombre), proyectos(nombre)")
       .eq("id", id)
+      .eq("empresa_id", empresaId)
       .single()
   );
 }
 
-export async function crearTarea(input: TareaInput): Promise<Tarea> {
+export async function crearTarea(empresaId: string, input: TareaInput): Promise<Tarea> {
   return fromSupabaseSingle(
-    supabase.from("tareas").insert(input).select("*").single()
+    supabase.from("tareas").insert({ ...input, empresa_id: empresaId }).select("*").single()
   );
 }
 
 export async function actualizarTarea(
   id: string,
+  empresaId: string,
   input: Partial<TareaInput>
 ): Promise<Tarea> {
   return fromSupabaseSingle(
@@ -124,6 +129,7 @@ export async function actualizarTarea(
       .from("tareas")
       .update(input)
       .eq("id", id)
+      .eq("empresa_id", empresaId)
       .select("*")
       .single()
   );
@@ -131,6 +137,7 @@ export async function actualizarTarea(
 
 export async function moverTarea(
   id: string,
+  empresaId: string,
   columna: string,
   orden: number
 ): Promise<Tarea> {
@@ -139,16 +146,18 @@ export async function moverTarea(
       .from("tareas")
       .update({ columna, orden })
       .eq("id", id)
+      .eq("empresa_id", empresaId)
       .select("*")
       .single()
   );
 }
 
-export async function eliminarTarea(id: string): Promise<void> {
+export async function eliminarTarea(id: string, empresaId: string): Promise<void> {
   const { error } = await supabase
     .from("tareas")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("empresa_id", empresaId);
 
   if (error) {
     throw new Error(error.message);

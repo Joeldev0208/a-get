@@ -10,6 +10,7 @@ import FormField from "@/components/ui/FormField";
 import SubmitButton from "@/components/ui/SubmitButton";
 import { ServiceError } from "@/lib/services/supabase-service";
 import { listarPagos, crearPago, listarFacturas } from "@/lib/services/facturacion.service";
+import { obtenerPerfilActual } from "@/lib/services/empresa";
 import type { PagoConFactura, Factura } from "@/lib/types/facturacion";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -26,9 +27,10 @@ interface PagoFormProps {
   onClose: () => void;
   onSuccess: () => void;
   facturas: Factura[];
+  empresaId: string;
 }
 
-function PagoForm({ isOpen, onClose, onSuccess, facturas }: PagoFormProps) {
+function PagoForm({ isOpen, onClose, onSuccess, facturas, empresaId }: PagoFormProps) {
   const [facturaId, setFacturaId] = useState("");
   const [monto, setMonto] = useState("");
   const [metodo, setMetodo] = useState("efectivo");
@@ -54,7 +56,7 @@ function PagoForm({ isOpen, onClose, onSuccess, facturas }: PagoFormProps) {
     try {
       setLoading(true);
       setError(null);
-      await crearPago({
+      await crearPago(empresaId, {
         factura_id: facturaId,
         monto: Number(monto),
         metodo: metodo as any,
@@ -101,7 +103,7 @@ function PagoForm({ isOpen, onClose, onSuccess, facturas }: PagoFormProps) {
 }
 
 // ── Botón wrapper ───────────────────────────────────────────────
-function NuevoPagoBtn({ onSuccess, facturas }: { onSuccess: () => void; facturas: Factura[] }) {
+function NuevoPagoBtn({ onSuccess, facturas, empresaId }: { onSuccess: () => void; facturas: Factura[]; empresaId: string }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
@@ -109,7 +111,7 @@ function NuevoPagoBtn({ onSuccess, facturas }: { onSuccess: () => void; facturas
         <Plus size={16} />
         Registrar Pago
       </button>
-      <PagoForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} facturas={facturas} />
+      <PagoForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} facturas={facturas} empresaId={empresaId} />
     </>
   );
 }
@@ -120,12 +122,16 @@ export default function PagosPage() {
   const [facturas, setFacturas] = useState<Factura[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [empresaId, setEmpresaId] = useState<string>("");
 
   const cargarDatos = async () => {
     try {
       setLoading(true);
       setError(null);
-      const [pagos, facs] = await Promise.all([listarPagos(), listarFacturas()]);
+      const perfil = await obtenerPerfilActual();
+      if (!perfil) throw new Error("No se pudo obtener el perfil de usuario");
+      setEmpresaId(perfil.empresa_id);
+      const [pagos, facs] = await Promise.all([listarPagos(perfil.empresa_id), listarFacturas(perfil.empresa_id)]);
       setData(pagos);
       setFacturas(facs);
     } catch (err) {
@@ -144,13 +150,13 @@ export default function PagosPage() {
 
   return (
     <div>
-      <PageHeader title="Pagos" actions={<NuevoPagoBtn onSuccess={handleNuevo} facturas={facturas} />} />
+      <PageHeader title="Pagos" actions={<NuevoPagoBtn onSuccess={handleNuevo} facturas={facturas} empresaId={empresaId} />} />
 
       {data.length === 0 ? (
         <EmptyState
           title="No hay pagos registrados"
           description="Registra pagos asociados a las facturas."
-          action={<NuevoPagoBtn onSuccess={handleNuevo} facturas={facturas} />}
+          action={<NuevoPagoBtn onSuccess={handleNuevo} facturas={facturas} empresaId={empresaId} />}
         />
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">

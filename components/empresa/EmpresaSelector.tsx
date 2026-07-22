@@ -49,6 +49,13 @@ export default function EmpresaSelector() {
     try {
       const codigo = codigoEmpresa.trim().toUpperCase();
       await unirseAEmpresa(codigo, user.id);
+
+      const perfil = await buscarPerfilActual();
+      if (!perfil) {
+        setError("Perfil creado pero no se pudo verificar. Intenta iniciar sesión de nuevo.");
+        return;
+      }
+
       router.push("/inicio");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al unirse a la empresa");
@@ -75,6 +82,12 @@ export default function EmpresaSelector() {
         activo: true,
         nombre: user.email || `Usuario ${user.id.slice(0, 8)}`
       });
+
+      const perfil = await buscarPerfilActual();
+      if (!perfil) {
+        setError("Empresa creada pero el perfil no se pudo verificar. Intenta iniciar sesión de nuevo.");
+        return;
+      }
 
       router.push("/inicio");
     } catch (err) {

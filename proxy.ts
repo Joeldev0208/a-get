@@ -14,8 +14,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Solo ejecutar en rutas del dashboard protegidas
-    // NO en API, static files, _next, etc.
-    "/(inicio|rrhh|tareas|facturacion)/:path*",
+    "/(inicio|rrhh|tareas|ventas|inventario|sesiones|configuracion)/:path*",
   ],
 };

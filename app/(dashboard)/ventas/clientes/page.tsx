@@ -11,6 +11,7 @@ import SubmitButton from "@/components/ui/SubmitButton";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { ServiceError } from "@/lib/services/supabase-service";
 import { listarClientes, crearCliente } from "@/lib/services/facturacion.service";
+import { obtenerPerfilActual } from "@/lib/services/empresa";
 import type { Cliente } from "@/lib/types/facturacion";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 
@@ -19,10 +20,11 @@ interface ClienteFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  empresaId: string;
   cliente?: Cliente | null;
 }
 
-function ClienteForm({ isOpen, onClose, onSuccess, cliente }: ClienteFormProps) {
+function ClienteForm({ isOpen, onClose, onSuccess, empresaId, cliente }: ClienteFormProps) {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
@@ -53,7 +55,7 @@ function ClienteForm({ isOpen, onClose, onSuccess, cliente }: ClienteFormProps) 
 
       if (esEdicion && cliente) {
         const { actualizarCliente } = await import("@/lib/services/facturacion.service");
-        await actualizarCliente(cliente.id, {
+        await actualizarCliente(cliente.id, empresaId, {
           nombre: nombre.trim(),
           email: email.trim() || null,
           telefono: telefono.trim() || null,
@@ -61,7 +63,7 @@ function ClienteForm({ isOpen, onClose, onSuccess, cliente }: ClienteFormProps) 
           rnc_cedula: rncCedula.trim() || null,
         });
       } else {
-        await crearCliente({
+        await crearCliente(empresaId, {
           nombre: nombre.trim(),
           email: email.trim() || null,
           telefono: telefono.trim() || null,
@@ -96,7 +98,7 @@ function ClienteForm({ isOpen, onClose, onSuccess, cliente }: ClienteFormProps) 
 }
 
 // ── Botón wrapper ───────────────────────────────────────────────
-function NuevoClienteBtn({ onSuccess }: { onSuccess: () => void }) {
+function NuevoClienteBtn({ onSuccess, empresaId }: { onSuccess: () => void; empresaId: string }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
@@ -104,20 +106,20 @@ function NuevoClienteBtn({ onSuccess }: { onSuccess: () => void }) {
         <Plus size={16} />
         Nuevo Cliente
       </button>
-      <ClienteForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} />
+      <ClienteForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} empresaId={empresaId} />
     </>
   );
 }
 
 // ── Botón Editar ────────────────────────────────────────────────
-function EditarClienteBtn({ cliente, onSuccess }: { cliente: Cliente; onSuccess: () => void }) {
+function EditarClienteBtn({ cliente, onSuccess, empresaId }: { cliente: Cliente; onSuccess: () => void; empresaId: string }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
       <button onClick={() => setIsOpen(true)} className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-blue-600">
         <Pencil size={16} />
       </button>
-      <ClienteForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} cliente={cliente} />
+      <ClienteForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} empresaId={empresaId} cliente={cliente} />
     </>
   );
 }
@@ -128,6 +130,7 @@ export default function VentasClientesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [empresaId, setEmpresaId] = useState<string>("");
 
   // Confirm dialog
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -137,7 +140,10 @@ export default function VentasClientesPage() {
     try {
       setLoading(true);
       setError(null);
-      const clientes = await listarClientes();
+      const perfil = await obtenerPerfilActual();
+      if (!perfil) throw new Error("No se pudo obtener el perfil de usuario");
+      setEmpresaId(perfil.empresa_id);
+      const clientes = await listarClientes(perfil.empresa_id);
       setData(clientes);
     } catch (err) {
       setError(err instanceof Error ? err : new ServiceError("UNKNOWN", "Error desconocido"));
@@ -172,7 +178,7 @@ export default function VentasClientesPage() {
     if (clienteToDelete) {
       try {
         const { eliminarCliente } = await import("@/lib/services/facturacion.service");
-        await eliminarCliente(clienteToDelete);
+        await eliminarCliente(clienteToDelete, empresaId);
         cargarDatos();
       } catch (e: any) {
         alert(`Error al eliminar: ${e.message}`);
@@ -186,7 +192,7 @@ export default function VentasClientesPage() {
 
   return (
     <div>
-      <PageHeader title="Clientes" actions={<NuevoClienteBtn onSuccess={cargarDatos} />} />
+      <PageHeader title="Clientes" actions={<NuevoClienteBtn onSuccess={cargarDatos} empresaId={empresaId} />} />
 
       {/* Buscador */}
       <div className="relative mb-6">
@@ -211,7 +217,7 @@ export default function VentasClientesPage() {
         <EmptyState
           title="No hay clientes registrados"
           description="Agrega clientes para empezar a facturar."
-          action={<NuevoClienteBtn onSuccess={cargarDatos} />}
+          action={<NuevoClienteBtn onSuccess={cargarDatos} empresaId={empresaId} />}
         />
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -240,7 +246,7 @@ export default function VentasClientesPage() {
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{cliente.telefono || "—"}</td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{cliente.rnc_cedula || "—"}</td>
                     <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
-                      <EditarClienteBtn cliente={cliente} onSuccess={cargarDatos} />
+                      <EditarClienteBtn cliente={cliente} onSuccess={cargarDatos} empresaId={empresaId} />
                       <button
                         data-cliente-id={cliente.id}
                         onClick={() => handleEliminar(cliente.id)}

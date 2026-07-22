@@ -45,41 +45,27 @@ export async function crearPerfil(data: PerfilUsuarioInput): Promise<PerfilUsuar
 }
 
 export async function obtenerPerfilActual(): Promise<PerfilUsuario | null> {
-  console.log("[obtenerPerfilActual] Iniciando...");
-
-  // Primero intentar con getSession()
   let userId: string | null = null;
-  let email: string | null = null;
 
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    console.log("[obtenerPerfilActual] getSession:", session ? `Usuario ${session.user.id}` : "Sin sesión");
     userId = session?.user?.id || null;
-    email = session?.user?.email || null;
   } catch (e) {
     console.warn("[obtenerPerfilActual] getSession falló:", e);
   }
 
-  // Si getSession() no funcionó, usar getUser()
   if (!userId) {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      console.log("[obtenerPerfilActual] getUser:", user ? `Usuario ${user.id}` : "Sin usuario");
       userId = user?.id || null;
-      email = user?.email || null;
     } catch (e) {
-      console.error("[obtenerPerfilActual] getUser() también falló:", e);
+      console.error("[obtenerPerfilActual] getUser() falló:", e);
       return null;
     }
   }
 
-  if (!userId) {
-    console.warn("[obtenerPerfilActual] No hay usuario autenticado");
-    return null;
-  }
+  if (!userId) return null;
 
-  // Buscar perfil existente
-  console.log("[obtenerPerfilActual] Buscando perfil para:", { userId, email });
   const { data, error } = await supabase
     .from("perfiles_usuario")
     .select("*, empresas(nombre, codigo_unico)")
@@ -87,61 +73,12 @@ export async function obtenerPerfilActual(): Promise<PerfilUsuario | null> {
     .eq("activo", true)
     .single();
 
-  // Si existe, retornarlo
-  if (data && !error) {
-    console.log("[obtenerPerfilActual] Perfil encontrado:", data);
-    return data;
+  if (data && !error) return data;
+
+  if (error?.code !== "PGRST116") {
+    console.error("[obtenerPerfilActual] Error inesperado:", error);
   }
 
-  // Si no existe (PGRST116 = no rows found), crear perfil automáticamente
-  if (error?.code === "PGRST116") {
-    console.warn("[obtenerPerfilActual] Perfil no encontrado, creando automáticamente...");
-
-    // Obtener el email del usuario autenticado
-    const { data: { user } } = await supabase.auth.getUser();
-    const userEmail = user?.email || email || "usuario@example.com";
-
-    // Crear empresa por defecto
-    const { data: empresa, error: empresaError } = await supabase
-      .from("empresas")
-      .insert({
-        nombre: "Mi Empresa",
-        codigo_unico: `AGET-${Date.now().toString(36).toUpperCase()}`
-      })
-      .select()
-      .single();
-
-    if (empresaError || !empresa) {
-      console.error("[obtenerPerfilActual] Error al crear empresa:", empresaError);
-      return null;
-    }
-
-    console.log("[obtenerPerfilActual] Empresa creada:", empresa);
-
-    // Crear perfil con rol de gerente
-    const { data: perfil, error: perfilError } = await supabase
-      .from("perfiles_usuario")
-      .insert({
-        user_id: userId,
-        empresa_id: empresa.id,
-        rol: "gerente",
-        activo: true,
-        nombre: email || `Usuario ${userId.slice(0, 8)}`
-      })
-      .select("*, empresas(nombre, codigo_unico)")
-      .single();
-
-    if (perfilError || !perfil) {
-      console.error("[obtenerPerfilActual] Error al crear perfil:", perfilError);
-      return null;
-    }
-
-    console.log("[obtenerPerfilActual] Perfil creado automáticamente:", perfil);
-    return perfil;
-  }
-
-  // Otro tipo de error
-  console.error("[obtenerPerfilActual] Error al buscar perfil:", error);
   return null;
 }
 
@@ -165,18 +102,20 @@ export async function actualizarRol(perfilId: string, rol: RolUsuario): Promise<
 }
 
 export async function buscarPerfilActual(): Promise<PerfilUsuario | null> {
-  // Obtener userId
   const { data: { session } } = await supabase.auth.getSession();
   const userId = session?.user?.id;
   if (!userId) return null;
 
-  // Buscar perfil existente SIN crear automáticamente
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("perfiles_usuario")
     .select("*, empresas(nombre, codigo_unico)")
     .eq("user_id", userId)
     .eq("activo", true)
     .single();
+
+  if (error && error.code !== "PGRST116") {
+    console.error("[buscarPerfilActual] Error:", error);
+  }
 
   return data || null;
 }

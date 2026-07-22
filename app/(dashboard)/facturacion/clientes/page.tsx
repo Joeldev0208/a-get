@@ -10,6 +10,7 @@ import FormField from "@/components/ui/FormField";
 import SubmitButton from "@/components/ui/SubmitButton";
 import { ServiceError } from "@/lib/services/supabase-service";
 import { listarClientes, crearCliente } from "@/lib/services/facturacion.service";
+import { obtenerPerfilActual } from "@/lib/services/empresa";
 import type { Cliente } from "@/lib/types/facturacion";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
@@ -18,9 +19,10 @@ interface ClienteFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  empresaId: string;
 }
 
-function ClienteForm({ isOpen, onClose, onSuccess }: ClienteFormProps) {
+function ClienteForm({ isOpen, onClose, onSuccess, empresaId }: ClienteFormProps) {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
@@ -45,7 +47,7 @@ function ClienteForm({ isOpen, onClose, onSuccess }: ClienteFormProps) {
     try {
       setLoading(true);
       setError(null);
-      await crearCliente({
+      await crearCliente(empresaId, {
         nombre: nombre.trim(),
         email: email.trim() || null,
         telefono: telefono.trim() || null,
@@ -80,7 +82,7 @@ function ClienteForm({ isOpen, onClose, onSuccess }: ClienteFormProps) {
 }
 
 // ── Botón wrapper ───────────────────────────────────────────────
-function NuevoClienteBtn({ onSuccess }: { onSuccess: () => void }) {
+function NuevoClienteBtn({ onSuccess, empresaId }: { onSuccess: () => void; empresaId: string }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
@@ -88,7 +90,7 @@ function NuevoClienteBtn({ onSuccess }: { onSuccess: () => void }) {
         <Plus size={16} />
         Nuevo Cliente
       </button>
-      <ClienteForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} />
+      <ClienteForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} empresaId={empresaId} />
     </>
   );
 }
@@ -98,12 +100,16 @@ export default function ClientesPage() {
   const [data, setData] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [empresaId, setEmpresaId] = useState<string>("");
 
   const cargarDatos = async () => {
     try {
       setLoading(true);
       setError(null);
-      const clientes = await listarClientes();
+      const perfil = await obtenerPerfilActual();
+      if (!perfil) throw new Error("No se pudo obtener el perfil de usuario");
+      setEmpresaId(perfil.empresa_id);
+      const clientes = await listarClientes(perfil.empresa_id);
       setData(clientes);
     } catch (err) {
       setError(err instanceof Error ? err : new ServiceError("UNKNOWN", "Error desconocido"));
@@ -121,13 +127,13 @@ export default function ClientesPage() {
 
   return (
     <div>
-      <PageHeader title="Clientes" actions={<NuevoClienteBtn onSuccess={handleNuevo} />} />
+      <PageHeader title="Clientes" actions={<NuevoClienteBtn onSuccess={handleNuevo} empresaId={empresaId} />} />
 
       {data.length === 0 ? (
         <EmptyState
           title="No hay clientes registrados"
           description="Agrega clientes para empezar a facturar."
-          action={<NuevoClienteBtn onSuccess={handleNuevo} />}
+          action={<NuevoClienteBtn onSuccess={handleNuevo} empresaId={empresaId} />}
         />
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">

@@ -11,9 +11,10 @@ import SubmitButton from "@/components/ui/SubmitButton";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { ServiceError } from "@/lib/services/supabase-service";
 import {
-  listarFacturas, obtenerFactura, crearFactura, actualizarFactura, eliminarFactura,
+  listarFacturas, crearFactura, actualizarFactura, eliminarFactura,
   crearDetalle, eliminarDetalle, listarDetalles, listarClientes
 } from "@/lib/services/facturacion.service";
+import { obtenerPerfilActual } from "@/lib/services/empresa";
 import type { FacturaConCliente, Cliente, DetalleFactura, EstadoFactura } from "@/lib/types/facturacion";
 import { Plus, Pencil, Trash2, Search, Printer, X } from "lucide-react";
 
@@ -96,6 +97,7 @@ interface FacturaFormProps {
   onClose: () => void;
   onSuccess: () => void;
   clientes: Cliente[];
+  empresaId: string;
   factura?: FacturaConCliente | null;
 }
 
@@ -107,7 +109,7 @@ interface LineaDetalle {
   precio_unitario: number;
 }
 
-function FacturaForm({ isOpen, onClose, onSuccess, clientes, factura }: FacturaFormProps) {
+function FacturaForm({ isOpen, onClose, onSuccess, clientes, factura, empresaId }: FacturaFormProps) {
   const [numero, setNumero] = useState("");
   const [clienteId, setClienteId] = useState("");
   const [fechaEmision, setFechaEmision] = useState("");
@@ -190,7 +192,7 @@ function FacturaForm({ isOpen, onClose, onSuccess, clientes, factura }: FacturaF
 
       if (esEdicion && factura) {
         // Actualizar cabecera
-        await actualizarFactura(factura.id, {
+        await actualizarFactura(factura.id, empresaId, {
           numero: numero.trim(),
           cliente_id: clienteId,
           subtotal: Math.round(subtotal * 100) / 100,
@@ -217,7 +219,7 @@ function FacturaForm({ isOpen, onClose, onSuccess, clientes, factura }: FacturaF
           });
         }
       } else {
-        const newFactura = await crearFactura({
+        const newFactura = await crearFactura(empresaId, {
           numero: numero.trim(),
           cliente_id: clienteId,
           subtotal: Math.round(subtotal * 100) / 100,
@@ -328,21 +330,21 @@ function FacturaForm({ isOpen, onClose, onSuccess, clientes, factura }: FacturaF
 }
 
 // ── Botón Nueva Factura ─────────────────────────────────────────
-function NuevaFacturaBtn({ onSuccess, clientes }: { onSuccess: () => void; clientes: Cliente[] }) {
+function NuevaFacturaBtn({ onSuccess, clientes, empresaId }: { onSuccess: () => void; clientes: Cliente[]; empresaId: string }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
       <button onClick={() => setIsOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700">
         <Plus size={16} /> Nueva Factura
       </button>
-      <FacturaForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} clientes={clientes} />
+      <FacturaForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} clientes={clientes} empresaId={empresaId} />
     </>
   );
 }
 
 // ── Botón Editar Factura ────────────────────────────────────────
-function EditarFacturaBtn({ factura, onSuccess, clientes, onEdit }: {
-  factura: FacturaConCliente; onSuccess: () => void; clientes: Cliente[];
+function EditarFacturaBtn({ factura, onSuccess, clientes, empresaId, onEdit }: {
+  factura: FacturaConCliente; onSuccess: () => void; clientes: Cliente[]; empresaId: string;
   onEdit: (f: FacturaConCliente) => void;
 }) {
   return (
@@ -358,6 +360,7 @@ export default function FacturasPage() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [empresaId, setEmpresaId] = useState<string>("");
 
   // Búsqueda
   const [searchTerm, setSearchTerm] = useState("");
@@ -374,7 +377,10 @@ export default function FacturasPage() {
     try {
       setLoading(true);
       setError(null);
-      const [facturas, clts] = await Promise.all([listarFacturas(), listarClientes()]);
+      const perfil = await obtenerPerfilActual();
+      if (!perfil) throw new Error("No se pudo obtener el perfil de usuario");
+      setEmpresaId(perfil.empresa_id);
+      const [facturas, clts] = await Promise.all([listarFacturas(perfil.empresa_id), listarClientes(perfil.empresa_id)]);
       setData(facturas);
       setClientes(clts);
     } catch (err) {
@@ -418,7 +424,7 @@ export default function FacturasPage() {
 
   const confirmarEliminar = async () => {
     if (facturaToDelete) {
-      await eliminarFactura(facturaToDelete);
+      await eliminarFactura(facturaToDelete, empresaId);
       cargarDatos();
       setFacturaToDelete(null);
     }
@@ -431,7 +437,7 @@ export default function FacturasPage() {
     <div>
       <PageHeader
         title="Facturas"
-        actions={<NuevaFacturaBtn onSuccess={cargarDatos} clientes={clientes} />}
+        actions={<NuevaFacturaBtn onSuccess={cargarDatos} clientes={clientes} empresaId={empresaId} />}
       />
 
       {/* Buscador */}
@@ -457,7 +463,7 @@ export default function FacturasPage() {
         <EmptyState
           title="No hay facturas registradas"
           description="Crea tu primera factura para comenzar."
-          action={<NuevaFacturaBtn onSuccess={cargarDatos} clientes={clientes} />}
+          action={<NuevaFacturaBtn onSuccess={cargarDatos} clientes={clientes} empresaId={empresaId} />}
         />
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -505,6 +511,7 @@ export default function FacturasPage() {
                         factura={factura}
                         onSuccess={cargarDatos}
                         clientes={clientes}
+                        empresaId={empresaId}
                         onEdit={(f) => { setEditFactura(f); setEditModalOpen(true); }}
                       />
                       <button
@@ -528,6 +535,7 @@ export default function FacturasPage() {
         onClose={() => { setEditModalOpen(false); setEditFactura(null); }}
         onSuccess={cargarDatos}
         clientes={clientes}
+        empresaId={empresaId}
         factura={editFactura}
       />
 

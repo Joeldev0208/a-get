@@ -42,12 +42,13 @@ export default function InicioPage() {
       setError(null);
 
       const perfil = await obtenerPerfilActual();
+      if (!perfil) throw new Error("No se pudo obtener el perfil de usuario");
       const [empleados, proyectos, facturas, clientes, productos] = await Promise.all([
-        listarEmpleados(),
-        listarProyectos(),
-        listarFacturas(),
-        listarClientes(),
-        perfil ? listarProductos(perfil.empresa_id) : Promise.resolve([]),
+        listarEmpleados(perfil.empresa_id),
+        listarProyectos(perfil.empresa_id),
+        listarFacturas(perfil.empresa_id),
+        listarClientes(perfil.empresa_id),
+        listarProductos(perfil.empresa_id),
       ]);
 
       setStats({

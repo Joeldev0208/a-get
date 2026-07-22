@@ -5,6 +5,7 @@
 // ---- Empleados ----
 export interface Empleado {
   id: string;
+  empresa_id: string;
   nombre: string;
   email: string;
   puesto: string;
@@ -31,6 +32,7 @@ export interface EmpleadoConDepartamento extends Empleado {
 // ---- Departamentos ----
 export interface Departamento {
   id: string;
+  empresa_id: string;
   nombre: string;
   descripcion: string | null;
   created_at: string;
@@ -47,6 +49,7 @@ export type EstadoAsistencia = "presente" | "ausente" | "tarde" | "permiso";
 
 export interface Asistencia {
   id: string;
+  empresa_id: string;
   empleado_id: string;
   fecha: string;
   estado: EstadoAsistencia;

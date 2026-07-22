@@ -80,7 +80,7 @@ function ProductoForm({ isOpen, onClose, onSuccess, categorias, empresaId, produ
       };
 
       if (esEdicion) {
-        await actualizarProducto(producto!.id, payload);
+        await actualizarProducto(producto!.id, empresaId, payload);
       } else {
         await crearProducto(empresaId, payload);
       }
@@ -239,7 +239,7 @@ export default function ProductosPage() {
 
   const confirmarEliminar = async () => {
     if (productoToDelete) {
-      await eliminarProducto(productoToDelete);
+      await eliminarProducto(productoToDelete, empresaId);
       cargarDatos();
       setProductoToDelete(null);
     }

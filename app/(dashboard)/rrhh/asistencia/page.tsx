@@ -34,9 +34,13 @@ export default function AsistenciaPage() {
       setLoading(true);
       setError(null);
       
+      const perfil = await obtenerPerfilActual();
+      if (!perfil) throw new Error("No se pudo obtener el perfil de usuario");
+      setEmpresaId(perfil.empresa_id);
+      
       const [asistencias, emps] = await Promise.all([
-        listarAsistencia(),
-        listarEmpleados(),
+        listarAsistencia(perfil.empresa_id),
+        listarEmpleados(perfil.empresa_id),
       ]);
       setData(asistencias);
       setEmpleados(emps);

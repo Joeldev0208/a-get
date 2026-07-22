@@ -24,6 +24,7 @@ export default function VentasFacturasPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [empresaId, setEmpresaId] = useState<string>("");
 
   // Confirm dialog
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -33,7 +34,10 @@ export default function VentasFacturasPage() {
     try {
       setLoading(true);
       setError(null);
-      const facturas = await listarFacturas();
+      const perfil = await obtenerPerfilActual();
+      if (!perfil) throw new Error("No se pudo obtener el perfil de usuario");
+      setEmpresaId(perfil.empresa_id);
+      const facturas = await listarFacturas(perfil.empresa_id);
       setData(facturas);
     } catch (err) {
       setError(err instanceof Error ? err : new ServiceError("UNKNOWN", "Error desconocido"));
@@ -134,7 +138,7 @@ export default function VentasFacturasPage() {
     if (facturaToDelete) {
       try {
         const { eliminarFactura } = await import("@/lib/services/facturacion.service");
-        await eliminarFactura(facturaToDelete);
+        await eliminarFactura(facturaToDelete, empresaId);
         cargarDatos();
       } catch (e: any) {
         alert(`Error al eliminar: ${e.message}`);
