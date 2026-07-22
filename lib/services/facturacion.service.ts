@@ -154,3 +154,107 @@ export async function eliminarPago(id: string, empresaId: string): Promise<void>
     throw new Error(error.message);
   }
 }
+
+// ---- POS / Helpers ----
+
+export async function obtenerClientePorDefecto(empresaId: string): Promise<Cliente | null> {
+  const { data } = await supabase
+    .from("clientes")
+    .select("*")
+    .eq("empresa_id", empresaId)
+    .eq("nombre", "Consumidor Final")
+    .single();
+
+  if (data) return data;
+
+  const { data: cliente, error } = await supabase
+    .from("clientes")
+    .insert({
+      empresa_id: empresaId,
+      nombre: "Consumidor Final",
+      rnc_cedula: "000000000",
+    })
+    .select()
+    .single();
+
+  if (error) throw new Error(`Error al crear cliente por defecto: ${error.message}`);
+  return cliente;
+}
+
+interface DetallePOS {
+  producto_id?: string;
+  descripcion: string;
+  cantidad: number;
+  precio_unitario: number;
+  total: number;
+}
+
+export async function crearFacturaConDetalles(
+  empresaId: string,
+  data: {
+    cliente_id: string;
+    subtotal: number;
+    impuesto: number;
+    total: number;
+    detalles: DetallePOS[];
+  }
+): Promise<Factura> {
+  const { data: maxData } = await supabase
+    .from("facturas")
+    .select("numero")
+    .eq("empresa_id", empresaId)
+    .order("numero", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let ultimoNumero = 0;
+  if (maxData?.numero) {
+    const match = maxData.numero.match(/FAC-(\d+)/);
+    if (match) ultimoNumero = parseInt(match[1], 10);
+  }
+
+  let factura: Factura | null = null;
+
+  for (let intento = 0; intento < 3; intento++) {
+    const numeroIntento = `FAC-${String(ultimoNumero + 1 + intento).padStart(6, "0")}`;
+    const result = await supabase
+      .from("facturas")
+      .insert({
+        empresa_id: empresaId,
+        numero: numeroIntento,
+        cliente_id: data.cliente_id,
+        subtotal: data.subtotal,
+        impuesto: data.impuesto,
+        total: data.total,
+      })
+      .select()
+      .single();
+
+    if (result.error) {
+      if (result.error.code === "23505" && result.error.message.includes("facturas_numero_key")) {
+        continue;
+      }
+      throw new Error(`Error al crear factura: ${result.error.message}`);
+    }
+
+    factura = result.data;
+    break;
+  }
+
+  if (!factura) {
+    throw new Error("No se pudo generar un número único después de 3 intentos");
+  }
+
+  const detalles = data.detalles.map((d) => ({
+    factura_id: factura.id,
+    descripcion: d.descripcion,
+    cantidad: d.cantidad,
+    precio_unitario: d.precio_unitario,
+    total: d.total,
+  }));
+
+  const { error: detError } = await supabase.from("detalles_factura").insert(detalles);
+  if (detError) throw new Error(`Error al crear detalles: ${detError.message}`);
+
+  return factura;
+}

@@ -241,16 +241,16 @@ export default function PosPage() {
     try {
       setCheckoutLoading(true);
 
-      const { crearFactura, obtenerClientePorDefecto } = await import("@/lib/services/facturacion");
+      const { crearFacturaConDetalles, obtenerClientePorDefecto } = await import("@/lib/services/facturacion.service");
 
       // Obtener o crear cliente "Consumidor Final"
-      let cliente = await obtenerClientePorDefecto(empresaId);
+      const cliente = await obtenerClientePorDefecto(empresaId);
       if (!cliente) {
         alert("Error al obtener cliente por defecto");
         return;
       }
 
-      const factura = await crearFactura(empresaId, {
+      const factura = await crearFacturaConDetalles(empresaId, {
         cliente_id: cliente.id,
         subtotal,
         impuesto,

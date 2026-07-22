@@ -1,15 +1,5 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import PageHeader from "@/components/layout/PageHeader";
-import Loading from "@/components/ui/Loading";
-import ErrorBox from "@/components/ui/ErrorBox";
-import { ServiceError } from "@/lib/services/supabase-service";
-import { listarEmpleados } from "@/lib/services/rrhh.service";
-import { listarProyectos } from "@/lib/services/tareas.service";
-import { listarFacturas, listarClientes } from "@/lib/services/facturacion.service";
-import { listarProductos } from "@/lib/services/inventario";
-import { obtenerPerfilActual } from "@/lib/services/empresa";
+import { createClient } from "@/lib/supabase/server";
 import { Users, ClipboardList, Receipt, UserCheck, TrendingUp, TrendingDown, DollarSign, BarChart3 } from "lucide-react";
 import Link from "next/link";
 
@@ -30,96 +20,97 @@ interface AnalisisVentas {
   productosConCambioPrecio: { nombre: string; precioAnterior: number; precioActual: number; variacion: number }[];
 }
 
-export default function InicioPage() {
-  const [stats, setStats] = useState<Estadisticas | null>(null);
-  const [analisis, setAnalisis] = useState<AnalisisVentas | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+async function obtenerDatos(empresaId: string) {
+  const supabase = await createClient();
 
-  const cargarDatos = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const [empleados, proyectos, facturas, clientes, productos] = await Promise.all([
+    supabase.from("empleados").select("*").eq("empresa_id", empresaId),
+    supabase.from("proyectos").select("*").eq("empresa_id", empresaId),
+    supabase.from("facturas").select("*").eq("empresa_id", empresaId),
+    supabase.from("clientes").select("*").eq("empresa_id", empresaId),
+    supabase.from("productos").select("*").eq("empresa_id", empresaId),
+  ]);
 
-      const perfil = await obtenerPerfilActual();
-      if (!perfil) throw new Error("No se pudo obtener el perfil de usuario");
-      const [empleados, proyectos, facturas, clientes, productos] = await Promise.all([
-        listarEmpleados(perfil.empresa_id),
-        listarProyectos(perfil.empresa_id),
-        listarFacturas(perfil.empresa_id),
-        listarClientes(perfil.empresa_id),
-        listarProductos(perfil.empresa_id),
-      ]);
+  const empleadosData = empleados.data || [];
+  const proyectosData = proyectos.data || [];
+  const facturasData = facturas.data || [];
+  const clientesData = clientes.data || [];
+  const productosData = productos.data || [];
 
-      setStats({
-        empleados: empleados.length,
-        empleadosActivos: empleados.filter((e) => e.activo).length,
-        proyectos: proyectos.length,
-        proyectosActivos: proyectos.filter((p) => p.estado === "activo").length,
-        facturas: facturas.length,
-        facturasPendientes: facturas.filter((f) => f.estado === "pendiente" || f.estado === "vencida").length,
-        clientes: clientes.length,
-      });
-
-      // ── Análisis de Ventas ─────────────────────────────────
-      const facturasPagadas = facturas.filter((f) => f.estado === "pagada");
-      const facturasVencidas = facturas.filter((f) => f.estado === "vencida");
-
-      const gananciasTotales = facturasPagadas.reduce((sum, f) => sum + Number(f.total), 0);
-      const perdidasEstimadas = facturasVencidas.reduce((sum, f) => sum + Number(f.total), 0);
-
-      // Productos más vendidos (simulado desde facturas pagadas)
-      const productosMasVendidos = productos
-        .sort((a, b) => b.stock - a.stock)
-        .slice(0, 5)
-        .map((p) => ({
-          nombre: p.nombre,
-          cantidad: Math.max(0, 50 - p.stock), // Simulación
-          total: (Math.max(0, 50 - p.stock) * p.precio_venta),
-        }))
-        .filter((p) => p.cantidad > 0);
-
-      // Productos con cambio de precio (simulado basado en costo vs precio)
-      const productosConCambioPrecio = productos
-        .filter((p) => p.costo > 0 && p.precio_venta > 0)
-        .slice(0, 5)
-        .map((p) => {
-          const margen = ((p.precio_venta - p.costo) / p.costo) * 100;
-          return {
-            nombre: p.nombre,
-            precioAnterior: p.costo,
-            precioActual: p.precio_venta,
-            variacion: Math.round(margen * 100) / 100,
-          };
-        });
-
-      setAnalisis({
-        gananciasTotales,
-        perdidasEstimadas,
-        productosMasVendidos,
-        productosConCambioPrecio,
-      });
-    } catch (err) {
-      setError(
-        err instanceof Error ? err : new ServiceError("UNKNOWN", "Error al cargar el dashboard")
-      );
-    } finally {
-      setLoading(false);
-    }
+  const stats: Estadisticas = {
+    empleados: empleadosData.length,
+    empleadosActivos: empleadosData.filter((e: any) => e.activo).length,
+    proyectos: proyectosData.length,
+    proyectosActivos: proyectosData.filter((p: any) => p.estado === "activo").length,
+    facturas: facturasData.length,
+    facturasPendientes: facturasData.filter((f: any) => f.estado === "pendiente" || f.estado === "vencida").length,
+    clientes: clientesData.length,
   };
 
-  useEffect(() => {
-    cargarDatos();
-  }, []);
+  const facturasPagadas = facturasData.filter((f: any) => f.estado === "pagada");
+  const facturasVencidas = facturasData.filter((f: any) => f.estado === "vencida");
+  const gananciasTotales = facturasPagadas.reduce((sum: number, f: any) => sum + Number(f.total), 0);
+  const perdidasEstimadas = facturasVencidas.reduce((sum: number, f: any) => sum + Number(f.total), 0);
 
-  if (loading) return <Loading />;
-  if (error) return <ErrorBox error={error} onRetry={cargarDatos} />;
+  const productosMasVendidos = productosData
+    .sort((a: any, b: any) => b.stock - a.stock)
+    .slice(0, 5)
+    .map((p: any) => ({
+      nombre: p.nombre,
+      cantidad: Math.max(0, 50 - p.stock),
+      total: Math.max(0, 50 - p.stock) * p.precio_venta,
+    }))
+    .filter((p: any) => p.cantidad > 0);
+
+  const productosConCambioPrecio = productosData
+    .filter((p: any) => p.costo > 0 && p.precio_venta > 0)
+    .slice(0, 5)
+    .map((p: any) => {
+      const margen = ((p.precio_venta - p.costo) / p.costo) * 100;
+      return {
+        nombre: p.nombre,
+        precioAnterior: p.costo,
+        precioActual: p.precio_venta,
+        variacion: Math.round(margen * 100) / 100,
+      };
+    });
+
+  const analisis: AnalisisVentas = {
+    gananciasTotales,
+    perdidasEstimadas,
+    productosMasVendidos,
+    productosConCambioPrecio,
+  };
+
+  return { stats, analisis };
+}
+
+export default async function InicioPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return <div className="p-8 text-center text-gray-500">No autenticado</div>;
+  }
+
+  const { data: perfil } = await supabase
+    .from("perfiles_usuario")
+    .select("*, empresas(nombre, codigo_unico)")
+    .eq("user_id", user.id)
+    .eq("activo", true)
+    .single();
+
+  if (!perfil) {
+    return <div className="p-8 text-center text-gray-500">No se encontró perfil de usuario</div>;
+  }
+
+  const { stats, analisis } = await obtenerDatos(perfil.empresa_id);
 
   const cards = [
     {
       label: "Empleados",
-      value: stats?.empleados ?? 0,
-      sub: `${stats?.empleadosActivos ?? 0} activos`,
+      value: stats.empleados,
+      sub: `${stats.empleadosActivos} activos`,
       color: "border-l-blue-500",
       bg: "bg-blue-50",
       icon: Users,
@@ -128,8 +119,8 @@ export default function InicioPage() {
     },
     {
       label: "Proyectos",
-      value: stats?.proyectos ?? 0,
-      sub: `${stats?.proyectosActivos ?? 0} activos`,
+      value: stats.proyectos,
+      sub: `${stats.proyectosActivos} activos`,
       color: "border-l-green-500",
       bg: "bg-green-50",
       icon: ClipboardList,
@@ -138,23 +129,23 @@ export default function InicioPage() {
     },
     {
       label: "Facturas",
-      value: stats?.facturas ?? 0,
-      sub: `${stats?.facturasPendientes ?? 0} pendientes`,
+      value: stats.facturas,
+      sub: `${stats.facturasPendientes} pendientes`,
       color: "border-l-purple-500",
       bg: "bg-purple-50",
       icon: Receipt,
       iconBg: "bg-purple-100 text-purple-600",
-      href: "/facturacion/facturas",
+      href: "/ventas/facturas",
     },
     {
       label: "Clientes",
-      value: stats?.clientes ?? 0,
+      value: stats.clientes,
       sub: "registrados",
       color: "border-l-amber-500",
       bg: "bg-amber-50",
       icon: UserCheck,
       iconBg: "bg-amber-100 text-amber-600",
-      href: "/facturacion/clientes",
+      href: "/ventas/clientes",
     },
   ];
 
@@ -162,7 +153,6 @@ export default function InicioPage() {
     <div>
       <PageHeader title="Inicio" />
 
-      {/* Tarjetas de estadísticas */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => (
           <Link
@@ -186,137 +176,126 @@ export default function InicioPage() {
         ))}
       </div>
 
-      {/* ── Análisis de Ventas ──────────────────────────────────── */}
-      {analisis && (
-        <div className="mt-8">
-          <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-800">
-            <BarChart3 size={20} className="text-blue-600" />
-            Análisis de Ventas
-          </h3>
+      <div className="mt-8">
+        <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-800">
+          <BarChart3 size={20} className="text-blue-600" />
+          Análisis de Ventas
+        </h3>
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Ganancias Totales */}
-            <div className="rounded-xl border border-green-200 bg-green-50 p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-green-700">Ganancias del Período</p>
-                  <p className="mt-1 text-2xl font-bold text-green-800">
-                    ${analisis.gananciasTotales.toLocaleString()}
-                  </p>
-                  <p className="mt-0.5 text-xs text-green-600">Facturas pagadas</p>
-                </div>
-                <div className="rounded-full bg-green-100 p-3 text-green-600">
-                  <TrendingUp size={24} />
-                </div>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl border border-green-200 bg-green-50 p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-green-700">Ganancias del Período</p>
+                <p className="mt-1 text-2xl font-bold text-green-800">
+                  ${analisis.gananciasTotales.toLocaleString()}
+                </p>
+                <p className="mt-0.5 text-xs text-green-600">Facturas pagadas</p>
               </div>
-            </div>
-
-            {/* Pérdidas Estimadas */}
-            <div className="rounded-xl border border-red-200 bg-red-50 p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-red-700">Pérdidas Estimadas</p>
-                  <p className="mt-1 text-2xl font-bold text-red-800">
-                    ${analisis.perdidasEstimadas.toLocaleString()}
-                  </p>
-                  <p className="mt-0.5 text-xs text-red-600">Facturas vencidas</p>
-                </div>
-                <div className="rounded-full bg-red-100 p-3 text-red-600">
-                  <TrendingDown size={24} />
-                </div>
-              </div>
-            </div>
-
-            {/* Balance Neto */}
-            <div className="rounded-xl border border-blue-200 bg-blue-50 p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-blue-700">Balance Neto</p>
-                  <p className={`mt-1 text-2xl font-bold ${analisis.gananciasTotales - analisis.perdidasEstimadas >= 0 ? "text-green-700" : "text-red-700"}`}>
-                    ${(analisis.gananciasTotales - analisis.perdidasEstimadas).toLocaleString()}
-                  </p>
-                  <p className="mt-0.5 text-xs text-blue-600">Ganancias - Pérdidas</p>
-                </div>
-                <div className="rounded-full bg-blue-100 p-3 text-blue-600">
-                  <DollarSign size={24} />
-                </div>
-              </div>
-            </div>
-
-            {/* Facturación Promedio */}
-            <div className="rounded-xl border border-purple-200 bg-purple-50 p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-purple-700">Facturación Promedio</p>
-                  <p className="mt-1 text-2xl font-bold text-purple-800">
-                    ${stats?.facturas ? (analisis.gananciasTotales / Math.max(1, stats.facturas)).toFixed(2) : "0.00"}
-                  </p>
-                  <p className="mt-0.5 text-xs text-purple-600">Por factura emitida</p>
-                </div>
-                <div className="rounded-full bg-purple-100 p-3 text-purple-600">
-                  <Receipt size={24} />
-                </div>
+              <div className="rounded-full bg-green-100 p-3 text-green-600">
+                <TrendingUp size={24} />
               </div>
             </div>
           </div>
 
-          {/* Tablas de análisis */}
-          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Productos más vendidos */}
-            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-              <h4 className="mb-3 text-sm font-semibold text-gray-700">Top Productos Vendidos</h4>
-              {analisis.productosMasVendidos.length === 0 ? (
-                <p className="text-sm text-gray-400">Sin datos de ventas</p>
-              ) : (
-                <div className="space-y-3">
-                  {analisis.productosMasVendidos.map((p, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
-                          {i + 1}
-                        </span>
-                        <span className="text-sm font-medium text-gray-700">{p.nombre}</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-sm font-semibold text-gray-900">{p.cantidad} uds</span>
-                        <span className="ml-2 text-xs text-gray-400">${p.total.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+          <div className="rounded-xl border border-red-200 bg-red-50 p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-red-700">Pérdidas Estimadas</p>
+                <p className="mt-1 text-2xl font-bold text-red-800">
+                  ${analisis.perdidasEstimadas.toLocaleString()}
+                </p>
+                <p className="mt-0.5 text-xs text-red-600">Facturas vencidas</p>
+              </div>
+              <div className="rounded-full bg-red-100 p-3 text-red-600">
+                <TrendingDown size={24} />
+              </div>
             </div>
+          </div>
 
-            {/* Productos con cambio de precio */}
-            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-              <h4 className="mb-3 text-sm font-semibold text-gray-700">Productos con Variación de Precio</h4>
-              {analisis.productosConCambioPrecio.length === 0 ? (
-                <p className="text-sm text-gray-400">Sin datos de variación</p>
-              ) : (
-                <div className="space-y-3">
-                  {analisis.productosConCambioPrecio.map((p, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">{p.nombre}</p>
-                        <p className="text-xs text-gray-400">
-                          Costo: ${p.precioAnterior.toFixed(2)} → Venta: ${p.precioActual.toFixed(2)}
-                        </p>
-                      </div>
-                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        p.variacion > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                      }`}>
-                        {p.variacion > 0 ? "+" : ""}{p.variacion}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-700">Balance Neto</p>
+                <p className={`mt-1 text-2xl font-bold ${analisis.gananciasTotales - analisis.perdidasEstimadas >= 0 ? "text-green-700" : "text-red-700"}`}>
+                  ${(analisis.gananciasTotales - analisis.perdidasEstimadas).toLocaleString()}
+                </p>
+                <p className="mt-0.5 text-xs text-blue-600">Ganancias - Pérdidas</p>
+              </div>
+              <div className="rounded-full bg-blue-100 p-3 text-blue-600">
+                <DollarSign size={24} />
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-purple-200 bg-purple-50 p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-purple-700">Facturación Promedio</p>
+                <p className="mt-1 text-2xl font-bold text-purple-800">
+                  ${stats.facturas ? (analisis.gananciasTotales / Math.max(1, stats.facturas)).toFixed(2) : "0.00"}
+                </p>
+                <p className="mt-0.5 text-xs text-purple-600">Por factura emitida</p>
+              </div>
+              <div className="rounded-full bg-purple-100 p-3 text-purple-600">
+                <Receipt size={24} />
+              </div>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Accesos rápidos */}
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h4 className="mb-3 text-sm font-semibold text-gray-700">Top Productos Vendidos</h4>
+            {analisis.productosMasVendidos.length === 0 ? (
+              <p className="text-sm text-gray-400">Sin datos de ventas</p>
+            ) : (
+              <div className="space-y-3">
+                {analisis.productosMasVendidos.map((p, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
+                        {i + 1}
+                      </span>
+                      <span className="text-sm font-medium text-gray-700">{p.nombre}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-semibold text-gray-900">{p.cantidad} uds</span>
+                      <span className="ml-2 text-xs text-gray-400">${p.total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h4 className="mb-3 text-sm font-semibold text-gray-700">Productos con Variación de Precio</h4>
+            {analisis.productosConCambioPrecio.length === 0 ? (
+              <p className="text-sm text-gray-400">Sin datos de variación</p>
+            ) : (
+              <div className="space-y-3">
+                {analisis.productosConCambioPrecio.map((p, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">{p.nombre}</p>
+                      <p className="text-xs text-gray-400">
+                        Costo: ${p.precioAnterior.toFixed(2)} &rarr; Venta: ${p.precioActual.toFixed(2)}
+                      </p>
+                    </div>
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      p.variacion > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                    }`}>
+                      {p.variacion > 0 ? "+" : ""}{p.variacion}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="mt-8">
         <h3 className="mb-4 text-lg font-semibold text-gray-800">Accesos Rápidos</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -347,7 +326,7 @@ export default function InicioPage() {
           </Link>
 
           <Link
-            href="/facturacion"
+            href="/ventas/facturas"
             className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-purple-300 hover:shadow-md"
           >
             <div className="rounded-lg bg-purple-100 p-2.5 text-purple-600">

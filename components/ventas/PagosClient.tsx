@@ -1,16 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import PageHeader from "@/components/layout/PageHeader";
-import Loading from "@/components/ui/Loading";
 import EmptyState from "@/components/ui/EmptyState";
-import ErrorBox from "@/components/ui/ErrorBox";
 import Modal from "@/components/ui/Modal";
 import FormField from "@/components/ui/FormField";
 import SubmitButton from "@/components/ui/SubmitButton";
-import { ServiceError } from "@/lib/services/supabase-service";
-import { listarPagos, crearPago, listarFacturas } from "@/lib/services/facturacion.service";
-import { obtenerPerfilActual } from "@/lib/services/empresa";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { crearPago, eliminarPago, listarPagos, listarFacturas } from "@/lib/services/facturacion.service";
 import type { PagoConFactura, Factura } from "@/lib/types/facturacion";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -21,16 +18,16 @@ const metodoStyles: Record<string, string> = {
   cheque: "bg-yellow-100 text-yellow-800",
 };
 
-// ── Formulario de Pago ──────────────────────────────────────────
-interface PagoFormProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-  facturas: Factura[];
+interface PagosClientProps {
+  initialData: PagoConFactura[];
+  initialFacturas: Factura[];
   empresaId: string;
 }
 
-function PagoForm({ isOpen, onClose, onSuccess, facturas, empresaId }: PagoFormProps) {
+function PagoForm({ isOpen, onClose, onSuccess, facturas, empresaId }: {
+  isOpen: boolean; onClose: () => void; onSuccess: () => void;
+  facturas: Factura[]; empresaId: string;
+}) {
   const [facturaId, setFacturaId] = useState("");
   const [monto, setMonto] = useState("");
   const [metodo, setMetodo] = useState("efectivo");
@@ -39,20 +36,10 @@ function PagoForm({ isOpen, onClose, onSuccess, facturas, empresaId }: PagoFormP
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const resetForm = () => {
-    setFacturaId("");
-    setMonto("");
-    setMetodo("efectivo");
-    setReferencia("");
-    setFechaPago(new Date().toISOString().split("T")[0]);
-    setError(null);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!facturaId) { setError("Debes seleccionar una factura"); return; }
     if (!monto || Number(monto) <= 0) { setError("El monto debe ser mayor a 0"); return; }
-
     try {
       setLoading(true);
       setError(null);
@@ -65,7 +52,7 @@ function PagoForm({ isOpen, onClose, onSuccess, facturas, empresaId }: PagoFormP
       });
       onSuccess();
       onClose();
-      resetForm();
+      setFacturaId(""); setMonto(""); setMetodo("efectivo"); setReferencia("");
     } catch (err: any) {
       setError(err.message || "Error al registrar pago");
     } finally {
@@ -102,61 +89,64 @@ function PagoForm({ isOpen, onClose, onSuccess, facturas, empresaId }: PagoFormP
   );
 }
 
-// ── Botón wrapper ───────────────────────────────────────────────
-function NuevoPagoBtn({ onSuccess, facturas, empresaId }: { onSuccess: () => void; facturas: Factura[]; empresaId: string }) {
+function NuevoPagoBtn({ onSuccess, facturas, empresaId }: {
+  onSuccess: () => void; facturas: Factura[]; empresaId: string;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
       <button onClick={() => setIsOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700">
-        <Plus size={16} />
-        Registrar Pago
+        <Plus size={16} /> Registrar Pago
       </button>
       <PagoForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} facturas={facturas} empresaId={empresaId} />
     </>
   );
 }
 
-// ── Página principal ────────────────────────────────────────────
-export default function PagosPage() {
-  const [data, setData] = useState<PagoConFactura[]>([]);
-  const [facturas, setFacturas] = useState<Factura[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [empresaId, setEmpresaId] = useState<string>("");
+export default function PagosClient({ initialData, initialFacturas, empresaId }: PagosClientProps) {
+  const [data, setData] = useState(initialData);
+  const [facturas, setFacturas] = useState(initialFacturas);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pagoToDelete, setPagoToDelete] = useState<string | null>(null);
 
-  const cargarDatos = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const perfil = await obtenerPerfilActual();
-      if (!perfil) throw new Error("No se pudo obtener el perfil de usuario");
-      setEmpresaId(perfil.empresa_id);
-      const [pagos, facs] = await Promise.all([listarPagos(perfil.empresa_id), listarFacturas(perfil.empresa_id)]);
-      setData(pagos);
-      setFacturas(facs);
-    } catch (err) {
-      setError(err instanceof Error ? err : new ServiceError("UNKNOWN", "Error desconocido"));
-    } finally {
-      setLoading(false);
+  const refresh = async () => {
+    const [pagos, facs] = await Promise.all([
+      listarPagos(empresaId),
+      listarFacturas(empresaId),
+    ]);
+    setData(pagos);
+    setFacturas(facs);
+  };
+
+  const handleEliminar = (id: string) => {
+    setPagoToDelete(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmarEliminar = async () => {
+    if (pagoToDelete) {
+      try {
+        await eliminarPago(pagoToDelete, empresaId);
+        refresh();
+      } catch (e: any) {
+        alert(`Error al eliminar: ${e.message}`);
+      }
+      setPagoToDelete(null);
     }
   };
 
-  useEffect(() => { cargarDatos(); }, []);
-
-  if (loading) return <Loading />;
-  if (error) return <ErrorBox error={error} onRetry={cargarDatos} />;
-
-  const handleNuevo = () => cargarDatos();
-
   return (
     <div>
-      <PageHeader title="Pagos" actions={<NuevoPagoBtn onSuccess={handleNuevo} facturas={facturas} empresaId={empresaId} />} />
+      <PageHeader
+        title="Pagos"
+        actions={<NuevoPagoBtn onSuccess={refresh} facturas={facturas} empresaId={empresaId} />}
+      />
 
       {data.length === 0 ? (
         <EmptyState
           title="No hay pagos registrados"
           description="Registra pagos asociados a las facturas."
-          action={<NuevoPagoBtn onSuccess={handleNuevo} facturas={facturas} empresaId={empresaId} />}
+          action={<NuevoPagoBtn onSuccess={refresh} facturas={facturas} empresaId={empresaId} />}
         />
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -182,7 +172,12 @@ export default function PagosPage() {
                   <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-semibold text-gray-900">${pago.monto.toLocaleString()}</td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{pago.referencia || "—"}</td>
                   <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
-                    <button className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-600"><Trash2 size={16} /></button>
+                    <button
+                      onClick={() => handleEliminar(pago.id)}
+                      className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-600"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -190,6 +185,17 @@ export default function PagosPage() {
           </table>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        onClose={() => { setConfirmOpen(false); setPagoToDelete(null); }}
+        onConfirm={confirmarEliminar}
+        title="Eliminar Pago"
+        message="¿Estás seguro de eliminar este pago? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        variant="danger"
+      />
     </div>
   );
 }
