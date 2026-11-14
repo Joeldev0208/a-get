@@ -34,6 +34,7 @@ import {
   listarProyectos,
 } from "@/lib/services/tareas.service";
 import { listarEmpleados } from "@/lib/services/rrhh.service";
+import { obtenerPerfilActual } from "@/lib/services/empresa";
 import { ServiceError } from "@/lib/services/supabase-service";
 import type { TareaConAsignado, ColumnaKanban, Tarea } from "@/lib/types/tareas";
 import { Plus, Pencil, Trash2, FolderOpen, GripVertical } from "lucide-react";
@@ -189,12 +190,13 @@ interface TareaFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  empresaId: string;
   proyectos: { id: string; nombre: string }[];
   empleados: { id: string; nombre: string }[];
   tarea?: TareaConAsignado | null;
 }
 
-function TareaForm({ isOpen, onClose, onSuccess, proyectos, empleados, tarea }: TareaFormProps) {
+function TareaForm({ isOpen, onClose, onSuccess, empresaId, proyectos, empleados, tarea }: TareaFormProps) {
   const [proyectoId, setProyectoId] = useState("");
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
@@ -238,9 +240,9 @@ function TareaForm({ isOpen, onClose, onSuccess, proyectos, empleados, tarea }: 
       setLoading(true);
       setError(null);
       if (esEdicion) {
-        await actualizarTarea(tarea!.id, payload);
+        await actualizarTarea(tarea!.id, empresaId, payload);
       } else {
-        await crearTarea(payload);
+        await crearTarea(empresaId, payload);
       }
       onSuccess();
       onClose();
@@ -278,7 +280,7 @@ function TareaForm({ isOpen, onClose, onSuccess, proyectos, empleados, tarea }: 
 }
 
 // ── Botón wrapper: Nueva Tarea ──────────────────────────────────
-function NuevaTareaBtn({ onSuccess, proyectos, empleados }: { onSuccess: () => void; proyectos: { id: string; nombre: string }[]; empleados: { id: string; nombre: string }[] }) {
+function NuevaTareaBtn({ onSuccess, proyectos, empleados, empresaId }: { onSuccess: () => void; proyectos: { id: string; nombre: string }[]; empleados: { id: string; nombre: string }[]; empresaId: string }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
@@ -286,7 +288,7 @@ function NuevaTareaBtn({ onSuccess, proyectos, empleados }: { onSuccess: () => v
         <Plus size={16} />
         Nueva Tarea
       </button>
-      <TareaForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} proyectos={proyectos} empleados={empleados} />
+      <TareaForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} empresaId={empresaId} proyectos={proyectos} empleados={empleados} />
     </>
   );
 }
@@ -305,6 +307,7 @@ export default function TableroPage() {
   const [error, setError] = useState<Error | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [editingTarea, setEditingTarea] = useState<TareaConAsignado | null>(null);
+  const [empresaId, setEmpresaId] = useState<string>("");
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -315,12 +318,15 @@ export default function TableroPage() {
     try {
       setLoading(true);
       setError(null);
-      const results = await Promise.all(columnas.map((col) => listarTareasPorColumna(col.id)));
+      const perfil = await obtenerPerfilActual();
+      if (!perfil) throw new Error("No se pudo obtener el perfil de usuario");
+      setEmpresaId(perfil.empresa_id);
+      const results = await Promise.all(columnas.map((col) => listarTareasPorColumna(perfil.empresa_id, col.id)));
       const nuevoEstado: Record<string, TareaConAsignado[]> = {};
       columnas.forEach((col, index) => { nuevoEstado[col.id] = results[index]; });
       setColumnData(nuevoEstado);
       try {
-        const [proys, emps] = await Promise.all([listarProyectos(), listarEmpleados()]);
+        const [proys, emps] = await Promise.all([listarProyectos(perfil.empresa_id), listarEmpleados(perfil.empresa_id)]);
         setProyectos(proys.map((p: any) => ({ id: p.id, nombre: p.nombre })));
         setEmpleados(emps.map((e: any) => ({ id: e.id, nombre: e.nombre })));
       } catch {}
@@ -396,7 +402,7 @@ export default function TableroPage() {
 
     // Persistir en Supabase
     try {
-      await moverTarea(activeId, nuevaColumna, 0);
+      await moverTarea(activeId, empresaId, nuevaColumna, 0);
     } catch (err) {
       console.error("Error al mover tarea:", err);
       cargarDatos(); // Rollback
@@ -413,7 +419,7 @@ export default function TableroPage() {
 
   const handleEliminar = async (id: string) => {
     try {
-      await eliminarTarea(id);
+      await eliminarTarea(id, empresaId);
       cargarDatos();
     } catch (err) {
       console.error("Error al eliminar tarea:", err);
@@ -425,15 +431,15 @@ export default function TableroPage() {
   if (totalTareas === 0) {
     return (
       <div>
-        <PageHeader title="Tablero Kanban" actions={<NuevaTareaBtn onSuccess={handleNuevo} proyectos={proyectos} empleados={empleados} />} />
-        <EmptyState title="No hay tareas en el tablero" description="Crea tareas desde los proyectos." action={<NuevaTareaBtn onSuccess={handleNuevo} proyectos={proyectos} empleados={empleados} />} />
+        <PageHeader title="Tablero Kanban" actions={<NuevaTareaBtn onSuccess={handleNuevo} proyectos={proyectos} empleados={empleados} empresaId={empresaId} />} />
+        <EmptyState title="No hay tareas en el tablero" description="Crea tareas desde los proyectos." action={<NuevaTareaBtn onSuccess={handleNuevo} proyectos={proyectos} empleados={empleados} empresaId={empresaId} />} />
       </div>
     );
   }
 
   return (
     <div>
-      <PageHeader title="Tablero Kanban" actions={<NuevaTareaBtn onSuccess={handleNuevo} proyectos={proyectos} empleados={empleados} />} />
+      <PageHeader title="Tablero Kanban" actions={<NuevaTareaBtn onSuccess={handleNuevo} proyectos={proyectos} empleados={empleados} empresaId={empresaId} />} />
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
@@ -479,6 +485,7 @@ export default function TableroPage() {
           isOpen={!!editingTarea}
           onClose={handleCloseEdit}
           onSuccess={() => { handleCloseEdit(); cargarDatos(); }}
+          empresaId={empresaId}
           proyectos={proyectos}
           empleados={empleados}
           tarea={editingTarea}

@@ -27,10 +27,11 @@ interface ProyectoFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  empresaId: string;
   proyecto?: Proyecto | null;
 }
 
-function ProyectoForm({ isOpen, onClose, onSuccess, proyecto }: ProyectoFormProps) {
+function ProyectoForm({ isOpen, onClose, onSuccess, empresaId, proyecto }: ProyectoFormProps) {
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [estado, setEstado] = useState("activo");
@@ -56,13 +57,13 @@ function ProyectoForm({ isOpen, onClose, onSuccess, proyecto }: ProyectoFormProp
       setError(null);
 
       if (esEdicion && proyecto) {
-        await actualizarProyecto(proyecto.id, {
+        await actualizarProyecto(proyecto.id, empresaId, {
           nombre: nombre.trim(),
           descripcion: descripcion.trim() || null,
           estado: estado as any,
         });
       } else {
-        await crearProyecto({
+        await crearProyecto(empresaId, {
           nombre: nombre.trim(),
           descripcion: descripcion.trim() || null,
           fecha_inicio: new Date().toISOString().split("T")[0],
@@ -113,12 +114,13 @@ interface TareaFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  empresaId: string;
   proyectoId: string;
   empleados: Empleado[];
   tarea?: TareaConAsignado | null;
 }
 
-function TareaForm({ isOpen, onClose, onSuccess, proyectoId, empleados, tarea }: TareaFormProps) {
+function TareaForm({ isOpen, onClose, onSuccess, empresaId, proyectoId, empleados, tarea }: TareaFormProps) {
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [prioridad, setPrioridad] = useState("media");
@@ -159,7 +161,7 @@ function TareaForm({ isOpen, onClose, onSuccess, proyectoId, empleados, tarea }:
       setError(null);
 
       if (esEdicion && tarea) {
-        await actualizarTarea(tarea.id, {
+        await actualizarTarea(tarea.id, empresaId, {
           titulo: titulo.trim(),
           descripcion: descripcion.trim() || null,
           prioridad: prioridad as any,
@@ -168,7 +170,7 @@ function TareaForm({ isOpen, onClose, onSuccess, proyectoId, empleados, tarea }:
           fecha_limite: fechaLimite || null,
         });
       } else {
-        await crearTarea({
+        await crearTarea(empresaId, {
           proyecto_id: proyectoId,
           titulo: titulo.trim(),
           descripcion: descripcion.trim() || null,
@@ -297,6 +299,7 @@ export default function ProyectosPage() {
   const [loading, setLoading] = useState(true);
   const [loadingTareas, setLoadingTareas] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [empresaId, setEmpresaId] = useState<string>("");
 
   // Modales
   const [proyectoModalOpen, setProyectoModalOpen] = useState(false);
@@ -315,9 +318,13 @@ export default function ProyectosPage() {
       setLoading(true);
       setError(null);
       
+      const perfil = await obtenerPerfilActual();
+      if (!perfil) throw new Error("No se pudo obtener el perfil de usuario");
+      setEmpresaId(perfil.empresa_id);
+      
       const [proys, emps] = await Promise.all([
-        listarProyectos(),
-        listarEmpleados()
+        listarProyectos(perfil.empresa_id),
+        listarEmpleados(perfil.empresa_id)
       ]);
       
       setProyectos(proys);
@@ -338,7 +345,7 @@ export default function ProyectosPage() {
     if (!selectedProyectoId) return;
     setLoadingTareas(true);
     
-    const ts = await listarTareas(selectedProyectoId);
+    const ts = await listarTareas(empresaId, selectedProyectoId);
     setTareas(ts);
     setLoadingTareas(false);
   }, [selectedProyectoId]);
@@ -346,7 +353,7 @@ export default function ProyectosPage() {
   useEffect(() => { recargarTareas(); }, [recargarTareas]);
 
   const handleMoverTarea = async (tareaId: string, nuevaColumna: ColumnaKanban) => {
-    await moverTarea(tareaId, nuevaColumna, 0);
+    await moverTarea(tareaId, empresaId, nuevaColumna, 0);
     setTareas((prev) =>
       prev.map((t) => (t.id === tareaId ? { ...t, columna: nuevaColumna } : t))
     );
@@ -366,7 +373,7 @@ export default function ProyectosPage() {
 
   const confirmarEliminarProyecto = async () => {
     if (deleteProyectoId) {
-      await eliminarProyecto(deleteProyectoId);
+      await eliminarProyecto(deleteProyectoId, empresaId);
       if (selectedProyectoId === deleteProyectoId) {
         setSelectedProyectoId(null);
       }
@@ -389,7 +396,7 @@ export default function ProyectosPage() {
 
   const confirmarEliminarTarea = async () => {
     if (deleteTareaId) {
-      await eliminarTarea(deleteTareaId);
+      await eliminarTarea(deleteTareaId, empresaId);
       recargarTareas();
       setDeleteTareaId(null);
     }
@@ -434,6 +441,7 @@ export default function ProyectosPage() {
         isOpen={proyectoModalOpen}
         onClose={() => { setProyectoModalOpen(false); setProyectoEditando(null); }}
         onSuccess={cargarProyectos}
+        empresaId={empresaId}
         proyecto={proyectoEditando}
       />
 
@@ -442,6 +450,7 @@ export default function ProyectosPage() {
         isOpen={tareaModalOpen}
         onClose={() => { setTareaModalOpen(false); setTareaEditando(null); }}
         onSuccess={recargarTareas}
+        empresaId={empresaId}
         proyectoId={selectedProyectoId || ""}
         empleados={empleados}
         tarea={tareaEditando}

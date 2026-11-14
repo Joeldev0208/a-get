@@ -1,57 +1,47 @@
-"use client";
+import PagosClient from "@/components/ventas/PagosClient";
+import { createClient } from "@/lib/supabase/server";
+import type { PagoConFactura, Factura } from "@/lib/types/facturacion";
 
-import { useState, useEffect } from "react";
-import PageHeader from "@/components/layout/PageHeader";
-import { listarPagos } from "@/lib/services/facturacion";
-import { obtenerPerfilActual } from "@/lib/services/empresa";
-import type { PagoConFactura } from "@/lib/types/facturacion";
+export default async function VentasPagosPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-export default function VentasPagosPage() {
-  const [pagos, setPagos] = useState<PagoConFactura[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => { loadData(); }, []);
-
-  async function loadData() {
-    const perfil = await obtenerPerfilActual();
-    if (!perfil) return;
-    setPagos(await listarPagos(perfil.empresa_id));
-    setLoading(false);
+  if (!user) {
+    return <div className="p-8 text-center text-gray-500">No autenticado</div>;
   }
 
-  if (loading) return <div className="p-8 text-center">Cargando...</div>;
+  const { data: perfil } = await supabase
+    .from("perfiles_usuario")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("activo", true)
+    .single();
+
+  if (!perfil) {
+    return <div className="p-8 text-center text-gray-500">No se encontró perfil de usuario</div>;
+  }
+
+  const [pagosRes, facturasRes] = await Promise.all([
+    supabase
+      .from("pagos")
+      .select("*, facturas(numero, total)")
+      .eq("empresa_id", perfil.empresa_id)
+      .order("fecha_pago", { ascending: false }),
+    supabase
+      .from("facturas")
+      .select("*")
+      .eq("empresa_id", perfil.empresa_id)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  const pagos = (pagosRes.data || []) as unknown as PagoConFactura[];
+  const facturas = (facturasRes.data || []) as Factura[];
 
   return (
-    <div>
-      <PageHeader title="Pagos" />
-
-      <div className="card">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Factura</th>
-              <th>Monto</th>
-              <th>Método</th>
-              <th>Referencia</th>
-              <th>Fecha</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pagos.map((p) => (
-              <tr key={p.id}>
-                <td className="font-medium">{p.facturas?.numero || "-"}</td>
-                <td>${p.monto.toFixed(2)}</td>
-                <td className="capitalize">{p.metodo}</td>
-                <td>{p.referencia || "-"}</td>
-                <td>{new Date(p.fecha_pago).toLocaleDateString()}</td>
-              </tr>
-            ))}
-            {pagos.length === 0 && (
-              <tr><td colSpan={5} className="text-center text-gray-500 py-4">No hay pagos registrados</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <PagosClient
+      initialData={pagos}
+      initialFacturas={facturas}
+      empresaId={perfil.empresa_id}
+    />
   );
 }

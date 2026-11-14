@@ -1,21 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, KeyRound, ArrowRight, LogIn } from "lucide-react";
+import { Building2, KeyRound, ArrowRight } from "lucide-react";
 import { useAuth } from "@/components/ui/AuthProvider";
-import { crearEmpresa, unirseAEmpresa } from "@/lib/services/empresa";
+import { buscarPerfilActual, crearEmpresa, unirseAEmpresa } from "@/lib/services/empresa";
 
 type Modo = "unirse" | "crear";
 
 export default function EmpresaSelector() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const [isOpen, setIsOpen] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modo, setModo] = useState<Modo>("unirse");
+
+  // Campos
   const [codigoEmpresa, setCodigoEmpresa] = useState("");
   const [nombreEmpresa, setNombreEmpresa] = useState("");
+
+  // Verificar si el usuario ya tiene perfil/empresa
+  useEffect(() => {
+    const verificarPerfil = async () => {
+      if (!user || authLoading) return;
+
+      try {
+        const perfil = await buscarPerfilActual();
+        if (perfil) {
+          // Usuario ya tiene empresa, redirigir
+          router.push("/inicio");
+        }
+      } catch (err) {
+        console.error("Error al verificar perfil:", err);
+      }
+    };
+
+    verificarPerfil();
+  }, [user, authLoading, router]);
+
+  const cambiarModo = () => {
+    setModo(modo === "unirse" ? "crear" : "unirse");
+    setError(null);
+  };
 
   const handleUnirse = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +54,13 @@ export default function EmpresaSelector() {
     try {
       const codigo = codigoEmpresa.trim().toUpperCase();
       await unirseAEmpresa(codigo, user.id);
+
+      const perfil = await buscarPerfilActual();
+      if (!perfil) {
+        setError("Perfil creado pero no se pudo verificar. Intenta iniciar sesión de nuevo.");
+        return;
+      }
+
       router.push("/inicio");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al unirse a la empresa");
@@ -54,6 +88,12 @@ export default function EmpresaSelector() {
         nombre: user.email || `Usuario ${user.id.slice(0, 8)}`
       });
 
+      const perfil = await buscarPerfilActual();
+      if (!perfil) {
+        setError("Empresa creada pero el perfil no se pudo verificar. Intenta iniciar sesión de nuevo.");
+        return;
+      }
+
       router.push("/inicio");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al crear la empresa");
@@ -62,25 +102,23 @@ export default function EmpresaSelector() {
     }
   };
 
-  const irAlInicio = () => {
-    router.push("/inicio");
-  };
-
-  const cambiarModo = () => {
-    setModo(modo === "unirse" ? "crear" : "unirse");
-    setError(null);
-  };
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Overlay */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
+      {/* Modal */}
       <div className="relative w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl border border-gray-200 animate-in fade-in zoom-in-95 duration-200">
+        {/* Header */}
         <div className="px-6 pt-6 pb-4 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100">
             <Building2 size={28} className="text-blue-600" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900">Bienvenido a AGET</h2>
+          <h2 className="text-xl font-bold text-gray-900">
+            Bienvenido a AGET
+          </h2>
           <p className="mt-1 text-sm text-gray-500">
             {modo === "unirse"
               ? "Ingresa el código de tu empresa para comenzar"
@@ -88,13 +126,16 @@ export default function EmpresaSelector() {
           </p>
         </div>
 
+        {/* Body */}
         <div className="px-6 pb-6">
+          {/* Error */}
           {error && (
             <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3">
               <p className="text-sm text-red-700">{error}</p>
             </div>
           )}
 
+          {/* Formulario */}
           {modo === "unirse" ? (
             <form onSubmit={handleUnirse} className="space-y-4">
               <div>
@@ -102,7 +143,10 @@ export default function EmpresaSelector() {
                   Código de empresa
                 </label>
                 <div className="relative">
-                  <KeyRound size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <KeyRound
+                    size={18}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
                   <input
                     type="text"
                     value={codigoEmpresa}
@@ -142,7 +186,10 @@ export default function EmpresaSelector() {
                   Nombre de la empresa
                 </label>
                 <div className="relative">
-                  <Building2 size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <Building2
+                    size={18}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
                   <input
                     type="text"
                     value={nombreEmpresa}
@@ -177,6 +224,7 @@ export default function EmpresaSelector() {
             </form>
           )}
 
+          {/* Toggle modo */}
           <div className="mt-4 text-center">
             <button
               type="button"
@@ -185,19 +233,8 @@ export default function EmpresaSelector() {
               disabled={loading}
             >
               {modo === "unirse"
-                ? "¿Quieres o tienes una empresa sin organizar? Presiona aquí"
+                ? "¿No tienes una empresa? Crea una nueva"
                 : "¿Ya tienes una empresa? Únete con el código"}
-            </button>
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-gray-200 text-center">
-            <button
-              type="button"
-              onClick={irAlInicio}
-              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors"
-            >
-              <LogIn size={16} />
-              Ya tengo empresa, ir al inicio
             </button>
           </div>
         </div>

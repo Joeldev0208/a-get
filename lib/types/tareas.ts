@@ -8,6 +8,7 @@ export type Prioridad = "baja" | "media" | "alta" | "urgente";
 
 export interface Proyecto {
   id: string;
+  empresa_id: string;
   nombre: string;
   descripcion: string | null;
   estado: EstadoProyecto;
@@ -34,6 +35,7 @@ export type ColumnaKanban = "pendientes" | "en_progreso" | "en_revision" | "comp
 
 export interface Tarea {
   id: string;
+  empresa_id: string;
   proyecto_id: string;
   titulo: string;
   descripcion: string | null;
@@ -65,6 +67,7 @@ export interface TareaConAsignado extends Tarea {
 // ---- Comentarios ----
 export interface Comentario {
   id: string;
+  empresa_id: string;
   tarea_id: string;
   contenido: string;
   autor_id: string | null;

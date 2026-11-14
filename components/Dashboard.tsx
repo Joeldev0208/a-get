@@ -1,10 +1,12 @@
 "use client";
 
-import { ReactNode } from "react";
-import { usePathname } from "next/navigation";
+import { ReactNode, useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import styles from "@/components/layout/layout.module.css";
+import { buscarPerfilActual } from "@/lib/services/empresa";
+import Loading from "@/components/ui/Loading";
 
 const pageTitles: Record<string, string> = {
   "/inicio": "Inicio",
@@ -34,7 +36,31 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [checking, setChecking] = useState(true);
   const title = pageTitles[pathname] || "AGET";
+
+  useEffect(() => {
+    const verificarPerfil = async () => {
+      try {
+        const perfil = await buscarPerfilActual();
+        if (!perfil) {
+          router.replace("/login");
+          return;
+        }
+      } catch (err) {
+        console.error("[Dashboard] Error verificando perfil:", err);
+        router.replace("/login");
+        return;
+      } finally {
+        setChecking(false);
+      }
+    };
+
+    verificarPerfil();
+  }, [router]);
+
+  if (checking) return <Loading />;
 
   return (
     <div className={styles.dashboardLayout}>

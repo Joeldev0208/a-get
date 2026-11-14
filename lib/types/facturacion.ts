@@ -5,6 +5,7 @@
 // ---- Clientes ----
 export interface Cliente {
   id: string;
+  empresa_id: string;
   nombre: string;
   email: string | null;
   telefono: string | null;
@@ -27,6 +28,7 @@ export type EstadoFactura = "pendiente" | "pagada" | "vencida" | "cancelada";
 
 export interface Factura {
   id: string;
+  empresa_id: string;
   numero: string;
   cliente_id: string;
   subtotal: number;
@@ -78,6 +80,7 @@ export type MetodoPago = "efectivo" | "transferencia" | "tarjeta" | "cheque";
 
 export interface Pago {
   id: string;
+  empresa_id: string;
   factura_id: string;
   monto: number;
   metodo: MetodoPago;

@@ -72,9 +72,9 @@ function EmpleadoForm({ isOpen, onClose, onSuccess, empresaId, departamentos, em
       setLoading(true);
       setError(null);
       if (esEdicion) {
-        await actualizarEmpleado(empleado!.id, payload);
+        await actualizarEmpleado(empleado!.id, empresaId, payload);
       } else {
-        await crearEmpleado(payload);
+        await crearEmpleado(empresaId, payload);
       }
       onSuccess();
       onClose();
@@ -170,10 +170,14 @@ export default function EmpleadosPage() {
       setLoading(true);
       setError(null);
       
+      const perfil = await obtenerPerfilActual();
+      if (!perfil) throw new Error("No se pudo obtener el perfil de usuario");
+      setEmpresaId(perfil.empresa_id);
+      
       const [empleados, deptos, asistencias] = await Promise.all([
-        listarEmpleados(),
-        listarDepartamentos(),
-        listarAsistencia(),
+        listarEmpleados(perfil.empresa_id),
+        listarDepartamentos(perfil.empresa_id),
+        listarAsistencia(perfil.empresa_id),
       ]);
       setData(empleados);
       setDepartamentos(deptos);
@@ -212,7 +216,7 @@ export default function EmpleadosPage() {
 
   const confirmarEliminar = async () => {
     if (empleadoToDelete) {
-      await eliminarEmpleado(empleadoToDelete);
+      await eliminarEmpleado(empleadoToDelete, empresaId);
       cargarDatos();
       setEmpleadoToDelete(null);
     }
@@ -226,7 +230,7 @@ export default function EmpleadosPage() {
   const handleGuardarAsistencia = async () => {
     try {
       for (const [empleadoId, estado] of Object.entries(asistenciaEditando)) {
-        await registrarAsistencia({
+        await registrarAsistencia(empresaId, {
           empleado_id: empleadoId,
           fecha: asistenciaFecha,
           estado,
@@ -277,7 +281,7 @@ export default function EmpleadosPage() {
         if (obj.empleado && obj.fecha && obj.estado) {
           const emp = data.find((e) => e.nombre.toLowerCase() === obj.empleado.toLowerCase());
           if (emp) {
-            await registrarAsistencia({
+            await registrarAsistencia(empresaId, {
               empleado_id: emp.id,
               fecha: obj.fecha,
               estado: obj.estado as EstadoAsistencia,

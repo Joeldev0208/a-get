@@ -44,5 +44,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# local instruction files (no son parte del repositorio)
 AGENTS.md
 CLAUDE.md
+
+# opencode
+*.opencode

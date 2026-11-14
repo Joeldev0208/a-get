@@ -54,9 +54,9 @@ function DepartamentoForm({ isOpen, onClose, onSuccess, empresaId, departamento 
       };
 
       if (esEdicion && departamento) {
-        await actualizarDepartamento(departamento.id, payload);
+        await actualizarDepartamento(departamento.id, empresaId, payload);
       } else {
-        await crearDepartamento(payload);
+        await crearDepartamento(empresaId, payload);
       }
       onSuccess();
       onClose();
@@ -137,7 +137,7 @@ export default function DepartamentosPage() {
       }
       setEmpresaId(perfil.empresa_id);
       
-      const deptos = await listarDepartamentos();
+      const deptos = await listarDepartamentos(perfil.empresa_id);
       setData(deptos);
     } catch (err) {
       setError(err instanceof Error ? err : new ServiceError("UNKNOWN", "Error desconocido"));
@@ -155,7 +155,7 @@ export default function DepartamentosPage() {
 
   const confirmarEliminar = async () => {
     if (deptoToDelete) {
-      await eliminarDepartamento(deptoToDelete);
+      await eliminarDepartamento(deptoToDelete, empresaId);
       cargarDatos();
       setDeptoToDelete(null);
     }

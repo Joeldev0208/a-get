@@ -11,12 +11,14 @@ interface DepartamentoFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (depto: Departamento) => void;
+  empresaId: string;
 }
 
 export default function DepartamentoForm({
   isOpen,
   onClose,
   onSuccess,
+  empresaId,
 }: DepartamentoFormProps) {
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
@@ -33,7 +35,7 @@ export default function DepartamentoForm({
     try {
       setLoading(true);
       setError(null);
-      const depto = await crearDepartamento({ nombre: nombre.trim(), descripcion: descripcion.trim() || null });
+      const depto = await crearDepartamento(empresaId, { nombre: nombre.trim(), descripcion: descripcion.trim() || null });
       onSuccess(depto);
       onClose();
       setNombre("");

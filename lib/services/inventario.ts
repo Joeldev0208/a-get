@@ -40,11 +40,12 @@ export async function listarProductos(empresaId: string): Promise<Producto[]> {
   return data || [];
 }
 
-export async function obtenerProducto(id: string): Promise<Producto | null> {
+export async function obtenerProducto(id: string, empresaId: string): Promise<Producto | null> {
   const { data } = await supabase
     .from("productos")
     .select("*, categorias(nombre)")
     .eq("id", id)
+    .eq("empresa_id", empresaId)
     .single();
 
   return data;
@@ -61,13 +62,13 @@ export async function crearProducto(empresaId: string, data: ProductoInput): Pro
   return producto;
 }
 
-export async function actualizarProducto(id: string, data: Partial<ProductoInput>): Promise<void> {
-  const { error } = await supabase.from("productos").update(data).eq("id", id);
+export async function actualizarProducto(id: string, empresaId: string, data: Partial<ProductoInput>): Promise<void> {
+  const { error } = await supabase.from("productos").update(data).eq("id", id).eq("empresa_id", empresaId);
   if (error) throw new Error(`Error al actualizar producto: ${error.message}`);
 }
 
-export async function eliminarProducto(id: string): Promise<void> {
-  const { error } = await supabase.from("productos").update({ activo: false }).eq("id", id);
+export async function eliminarProducto(id: string, empresaId: string): Promise<void> {
+  const { error } = await supabase.from("productos").update({ activo: false }).eq("id", id).eq("empresa_id", empresaId);
   if (error) throw new Error(`Error al eliminar producto: ${error.message}`);
 }
 
