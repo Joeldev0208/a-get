@@ -60,7 +60,6 @@ export default function Auth({ isOpen, onClose, onSuccess, initialMode = "login"
         const { error } = await Promise.race([loginPromise, timeoutPromise]);
         if (error) throw error;
         onSuccess();
-        onClose();
       } else {
         const signupPromise = supabase.auth.signUp({
           email: email.trim(),
