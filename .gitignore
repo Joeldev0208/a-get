@@ -30,11 +30,12 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files - solo ignorar .env.local, .env.development, etc.
-# .env.example SÍ se sube a git para documentar variables necesarias
+# env files - nunca subir credenciales reales
+.env.local
 .env.development.local
 .env.test.local
 .env.production.local
+# .env.example SÍ se sube a git para documentar variables necesarias
 
 # vercel
 .vercel
