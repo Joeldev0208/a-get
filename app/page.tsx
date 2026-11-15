@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import Auth from "@/components/ui/Auth";
-import DemoSeedButton from "@/components/demo/DemoSeedButton";
 
 export default function Home() {
   const [showAuth, setShowAuth] = useState(false);
@@ -11,6 +10,11 @@ export default function Home() {
 
   const openLogin = () => { setAuthMode("login"); setShowAuth(true); };
   const openRegistro = () => { setAuthMode("registro"); setShowAuth(true); };
+
+  const entrarDemo = () => {
+    sessionStorage.setItem("demo_mode", "true");
+    openLogin();
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-slate-50 to-blue-50">
@@ -28,6 +32,12 @@ export default function Home() {
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
           >
             Iniciar Sesión
+          </button>
+          <button
+            onClick={entrarDemo}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            Entrar en Demo
           </button>
           <button
             onClick={openRegistro}
@@ -61,11 +71,6 @@ export default function Home() {
           >
             Conocer más
           </Link>
-        </div>
-
-        {/* Demo data section */}
-        <div className="mt-12">
-          <DemoSeedButton />
         </div>
 
         {/* Features grid */}
