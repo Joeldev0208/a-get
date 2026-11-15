@@ -4,7 +4,15 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Building2, KeyRound, ArrowRight } from "lucide-react";
 import { useAuth } from "@/components/ui/AuthProvider";
-import { buscarPerfilActual, crearEmpresa, unirseAEmpresa } from "@/lib/services/empresa";
+import {
+  buscarPerfilActual,
+  crearEmpresa,
+  unirseAEmpresa,
+  obtenerEmpresaPorCodigo,
+} from "@/lib/services/empresa";
+import { seedDemoData } from "@/lib/services/demo.service";
+
+const CODIGO_EMPRESA_DEMO = "DEMO2026";
 
 type Modo = "unirse" | "crear";
 
@@ -20,15 +28,36 @@ export default function EmpresaSelector() {
   const [codigoEmpresa, setCodigoEmpresa] = useState("");
   const [nombreEmpresa, setNombreEmpresa] = useState("");
 
-  // Verificar si el usuario ya tiene perfil/empresa
+  // Verificar si el usuario ya tiene perfil/empresa O entrar en modo demo
   useEffect(() => {
     const verificarPerfil = async () => {
       if (!user || authLoading) return;
 
+      // Demo mode: auto-enter demo empresa with predetermined data
+      if (sessionStorage.getItem("demo_mode") === "true") {
+        try {
+          let empresa = await obtenerEmpresaPorCodigo(CODIGO_EMPRESA_DEMO);
+          if (!empresa) {
+            empresa = await crearEmpresa({ nombre: "Empresa Demo" });
+          }
+          await unirseAEmpresa(CODIGO_EMPRESA_DEMO, user.id);
+          await seedDemoData(empresa.id);
+          sessionStorage.removeItem("demo_mode");
+          router.push("/inicio");
+        } catch (err) {
+          console.error("Demo setup error:", err);
+          sessionStorage.removeItem("demo_mode");
+          setError(
+            "No se pudo configurar el entorno de demostración. Intenta crear o unirte a una empresa manualmente."
+          );
+        }
+        return;
+      }
+
+      // Normal flow: verificar si ya tiene perfil
       try {
         const perfil = await buscarPerfilActual();
         if (perfil) {
-          // Usuario ya tiene empresa, redirigir
           router.push("/inicio");
         }
       } catch (err) {
@@ -85,7 +114,7 @@ export default function EmpresaSelector() {
         empresa_id: empresa.id,
         rol: "gerente",
         activo: true,
-        nombre: user.email || `Usuario ${user.id.slice(0, 8)}`
+        nombre: user.email || `Usuario ${user.id.slice(0, 8)}`,
       });
 
       const perfil = await buscarPerfilActual();
@@ -130,7 +159,7 @@ export default function EmpresaSelector() {
         <div className="px-6 pb-6">
           {/* Error */}
           {error && (
-            <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3">
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
               <p className="text-sm text-red-700">{error}</p>
             </div>
           )}
