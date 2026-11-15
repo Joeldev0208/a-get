@@ -1,4 +1,5 @@
 import PageHeader from "@/components/layout/PageHeader";
+import DemoSeedButton from "@/components/demo/DemoSeedButton";
 import { createClient } from "@/lib/supabase/server";
 import { Users, ClipboardList, Receipt, UserCheck, TrendingUp, TrendingDown, DollarSign, BarChart3 } from "lucide-react";
 import Link from "next/link";
@@ -338,6 +339,11 @@ export default async function InicioPage() {
             </div>
           </Link>
         </div>
+      </div>
+      <div className="mt-8">
+        <h3 className="mb-4 text-lg font-semibold text-gray-800">Datos de Demostración</h3>
+        <p className="mb-4 text-sm text-gray-600">Carga datos de ejemplo para ver el dashboard con contenido.</p>
+        <DemoSeedButton empresaId={perfil.empresa_id} />
       </div>
     </div>
   );
