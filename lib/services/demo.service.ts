@@ -4,8 +4,10 @@
 
 import { crearCategoria, crearProducto, listarProductos } from "./inventario";
 import { crearProyecto, crearTarea, listarProyectos } from "./tareas.service";
+import { crearDepartamento, crearEmpleado } from "./rrhh.service";
 import type { CategoriaInput, ProductoInput } from "@/lib/types/inventario";
 import type { ProyectoInput, TareaInput } from "@/lib/types/tareas";
+import type { DepartamentoInput, EmpleadoInput } from "@/lib/types/rrhh";
 
 export async function seedDemoData(
   empresaId: string
@@ -114,8 +116,58 @@ export async function seedDemoData(
       await crearTarea(empresaId, tarea);
     }
 
+    // 5. Crear un departamento y empleados ("para las personas")
+    const departamento = await crearDepartamento(empresaId, {
+      nombre: "Operaciones",
+      descripcion: "Equipo operativo principal",
+    });
+
+    const empleados: EmpleadoInput[] = [
+      {
+        nombre: "María González",
+        email: "maria.gonzalez@empresa.demo",
+        puesto: "Gerente de Operaciones",
+        salario: 45000,
+        activo: true,
+        departamento_id: departamento.id,
+      },
+      {
+        nombre: "Carlos Ruiz",
+        email: "carlos.ruiz@empresa.demo",
+        puesto: "Desarrollador Frontend",
+        salario: 32000,
+        activo: true,
+        departamento_id: departamento.id,
+      },
+      {
+        nombre: "Lucía Méndez",
+        email: "lucia.mendez@empresa.demo",
+        puesto: "Diseñadora UX/UI",
+        salario: 30000,
+        activo: true,
+        departamento_id: departamento.id,
+      },
+    ];
+
+    for (const empleado of empleados) {
+      await crearEmpleado(empresaId, empleado);
+    }
+
     return { ok: true, message: "Datos de demostración creados exitosamente." };
   } catch (error: any) {
+    // Manejo de expiración de sesión de Supabase
+    if (
+      error?.message?.includes("session") ||
+      error?.message?.includes("auth") ||
+      error?.code === "401" ||
+      error?.status === 401
+    ) {
+      return {
+        ok: false,
+        message:
+          "Tu sesión expiró. Vuelve a iniciar sesión e intenta cargar los datos de demostración nuevamente.",
+      };
+    }
     return { ok: false, message: error.message };
   }
 }
