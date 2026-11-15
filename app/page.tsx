@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import Auth from "@/components/ui/Auth";
+import Loading from "@/components/ui/Loading";
 
 const DEMO_EMAIL = "demo@empresa.demo";
 const DEMO_PASSWORD = "DemoPass123!";
@@ -11,18 +12,22 @@ const DEMO_PASSWORD = "DemoPass123!";
 export default function Home() {
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "registro">("login");
+  const [demoLoading, setDemoLoading] = useState(false);
 
   const openLogin = () => { setAuthMode("login"); setShowAuth(true); };
   const openRegistro = () => { setAuthMode("registro"); setShowAuth(true); };
 
   const entrarDemo = async () => {
+    setDemoLoading(true);
     try {
+      // Auto-sign in con credenciales predeterminadas de demostración
       const { error } = await supabase.auth.signInWithPassword({
         email: DEMO_EMAIL,
         password: DEMO_PASSWORD,
       });
 
       if (error) {
+        // Si no existe, crear cuenta de demo automáticamente
         if (error.message.includes("Invalid login")) {
           const { error: signUpError } = await supabase.auth.signUp({
             email: DEMO_EMAIL,
@@ -42,9 +47,11 @@ export default function Home() {
         }
       }
 
+      // Activar modo demo para EmpresaSelector
       sessionStorage.setItem("demo_mode", "true");
       window.location.href = "/inicio";
     } catch (err) {
+      setDemoLoading(false);
       console.error("Demo login error:", err);
       alert(
         "No se pudo iniciar el entorno de demostración. Intenta iniciar sesión manualmente."
@@ -54,6 +61,7 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-slate-50 to-blue-50">
+      {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 sm:px-12">
         <div className="flex items-center gap-2 font-bold text-xl text-slate-800">
           <svg className="h-7 w-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -70,9 +78,16 @@ export default function Home() {
           </button>
           <button
             onClick={entrarDemo}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+            disabled={demoLoading}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Entrar en Demo
+            {demoLoading ? (
+              <>
+                <Loading size="sm" /> Entrando en Demo...
+              </>
+            ) : (
+              "Entrar en Demo"
+            )}
           </button>
           <button
             onClick={openRegistro}
@@ -83,6 +98,7 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Hero */}
       <main className="flex flex-1 flex-col items-center justify-center px-6 text-center sm:px-12">
         <h1 className="max-w-3xl text-4xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
           Gestiona tu PYME de forma{" "}
@@ -107,6 +123,7 @@ export default function Home() {
           </Link>
         </div>
 
+        {/* Features grid */}
         <div
           id="features"
           className="mt-24 grid grid-cols-1 gap-6 sm:grid-cols-3"
@@ -149,10 +166,12 @@ export default function Home() {
         </div>
       </main>
 
+      {/* Footer */}
       <footer className="border-t border-slate-200 bg-white px-6 py-6 text-center text-sm text-slate-500">
         © {new Date().getFullYear()} AGET. Todos los derechos reservados.
       </footer>
 
+      {/* Modal de Auth (solo inicio/registro manual, nunca para demo) */}
       <Auth
         key={authMode}
         isOpen={showAuth}
