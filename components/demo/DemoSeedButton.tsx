@@ -1,23 +1,49 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { seedDemoData } from "@/lib/services/demo.service";
+import { obtenerPerfilActual } from "@/lib/services/empresa";
 import SubmitButton from "@/components/ui/SubmitButton";
 import Loading from "@/components/ui/Loading";
 
 type SeedStatus = "idle" | "success" | "error" | null;
 
 interface DemoSeedButtonProps {
-  empresaId: string;
+  empresaId?: string;
 }
 
-export default function DemoSeedButton({ empresaId }: DemoSeedButtonProps) {
+export default function DemoSeedButton({ empresaId: empresaIdProp }: DemoSeedButtonProps) {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<SeedStatus>(null);
   const [message, setMessage] = useState("");
+  const [empresaId, setEmpresaId] = useState<string | null>(empresaIdProp ?? null);
+
+  useEffect(() => {
+    if (empresaIdProp) {
+      setEmpresaId(empresaIdProp);
+      return;
+    }
+    const fetchEmpresaId = async () => {
+      try {
+        const perfil = await obtenerPerfilActual();
+        if (perfil) {
+          setEmpresaId(perfil.empresa_id);
+        }
+      } catch {
+        // Silently fail — button will show disabled state
+      }
+    };
+    fetchEmpresaId();
+  }, [empresaIdProp]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (!empresaId) {
+      setStatus("error");
+      setMessage("No se encontró una empresa activa. Inicia sesión y selecciona una empresa primero.");
+      return;
+    }
 
     setLoading(true);
     setStatus(null);
@@ -51,7 +77,11 @@ export default function DemoSeedButton({ empresaId }: DemoSeedButtonProps) {
         </div>
       )}
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <SubmitButton loading={loading} text="Cargar datos de demo" />
+        <SubmitButton
+          loading={loading}
+          text={empresaId ? "Cargar datos de demo" : "Cargando empresa..."}
+          disabled={!empresaId}
+        />
         {loading && <Loading />}
       </form>
     </div>

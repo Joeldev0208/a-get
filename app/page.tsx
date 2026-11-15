@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Auth from "@/components/ui/Auth";
+import DemoSeedButton from "@/components/demo/DemoSeedButton";
 
 export default function Home() {
   const [showAuth, setShowAuth] = useState(false);
@@ -60,6 +61,11 @@ export default function Home() {
           >
             Conocer más
           </Link>
+        </div>
+
+        {/* Demo data section */}
+        <div className="mt-12">
+          <DemoSeedButton />
         </div>
 
         {/* Features grid */}
