@@ -2,62 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
 import Auth from "@/components/ui/Auth";
-import Loading from "@/components/ui/Loading";
-
-const DEMO_EMAIL = "demo@empresa.demo";
-const DEMO_PASSWORD = "DemoPass123!";
 
 export default function Home() {
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "registro">("login");
-  const [demoLoading, setDemoLoading] = useState(false);
 
   const openLogin = () => { setAuthMode("login"); setShowAuth(true); };
   const openRegistro = () => { setAuthMode("registro"); setShowAuth(true); };
-
-  const entrarDemo = async () => {
-    setDemoLoading(true);
-    try {
-      // Auto-sign in con credenciales predeterminadas de demostración
-      const { error } = await supabase.auth.signInWithPassword({
-        email: DEMO_EMAIL,
-        password: DEMO_PASSWORD,
-      });
-
-      if (error) {
-        // Si no existe, crear cuenta de demo automáticamente
-        if (error.message.includes("Invalid login")) {
-          const { error: signUpError } = await supabase.auth.signUp({
-            email: DEMO_EMAIL,
-            password: DEMO_PASSWORD,
-            options: {
-              data: { nombre: "Usuario Demo" },
-            },
-          });
-          if (signUpError) throw signUpError;
-          const { error: retryError } = await supabase.auth.signInWithPassword({
-            email: DEMO_EMAIL,
-            password: DEMO_PASSWORD,
-          });
-          if (retryError) throw retryError;
-        } else {
-          throw error;
-        }
-      }
-
-      // Activar modo demo para EmpresaSelector
-      sessionStorage.setItem("demo_mode", "true");
-      window.location.href = "/inicio";
-    } catch (err) {
-      setDemoLoading(false);
-      console.error("Demo login error:", err);
-      alert(
-        "No se pudo iniciar el entorno de demostración. Intenta iniciar sesión manualmente."
-      );
-    }
-  };
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-slate-50 to-blue-50">
@@ -77,24 +29,17 @@ export default function Home() {
             Iniciar Sesión
           </button>
           <button
-            onClick={entrarDemo}
-            disabled={demoLoading}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {demoLoading ? (
-              <>
-                <Loading size="sm" /> Entrando en Demo...
-              </>
-            ) : (
-              "Entrar en Demo"
-            )}
-          </button>
-          <button
             onClick={openRegistro}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
           >
             Registrarse
           </button>
+          <Link
+            href="/demo"
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            Ver Demo
+          </Link>
         </div>
       </header>
 
