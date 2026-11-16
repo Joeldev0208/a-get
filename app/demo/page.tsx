@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { useRouter } from "next/navigation";
 import {
   LayoutDashboard,
@@ -864,7 +864,7 @@ function ModuloConfiguracion() {
    PÁGINA PRINCIPAL DEMO
    ========================= */
 
-const MODULE_ROUTES: Record<string, JSX.Element> = {
+const MODULE_ROUTES: Record<string, ReactElement> = {
   "/demo/inicio": <ModuloInicio />,
   "/demo/rrhh/empleados": <ModuloEmpleados />,
   "/demo/inventario/productos": <ModuloProductos />,
