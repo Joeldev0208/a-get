@@ -2,32 +2,34 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import styles from "@/components/layout/layout.module.css";
 import { buscarPerfilActual } from "@/lib/services/empresa";
+import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 import Loading from "@/components/ui/Loading";
 
-const pageTitles: Record<string, string> = {
-  "/inicio": "Inicio",
+const pageTitleKeys: Record<string, string> = {
+  "/inicio": "dashboard.inicio",
   // RR.HH.
-  "/rrhh/empleados": "Empleados",
-  "/rrhh/departamentos": "Departamentos",
-  "/rrhh/asistencia": "Asistencia",
+  "/rrhh/empleados": "dashboard.empleados",
+  "/rrhh/departamentos": "dashboard.departamentos",
+  "/rrhh/asistencia": "dashboard.asistencia",
   // Inventario
-  "/inventario/productos": "Productos",
-  "/inventario/csv": "Importar / Exportar CSV",
+  "/inventario/productos": "dashboard.productos",
+  "/inventario/csv": "dashboard.csv",
   // Ventas
-  "/ventas/pos": "Punto de Venta",
-  "/ventas/clientes": "Clientes",
-  "/ventas/facturas": "Facturas",
-  "/ventas/pagos": "Pagos",
+  "/ventas/pos": "dashboard.pos",
+  "/ventas/clientes": "dashboard.clientes",
+  "/ventas/facturas": "dashboard.facturas",
+  "/ventas/pagos": "dashboard.pagos",
   // Tareas
-  "/tareas/proyectos": "Proyectos",
-  "/tareas/tablero": "Tablero Kanban",
+  "/tareas/proyectos": "dashboard.proyectos",
+  "/tareas/tablero": "dashboard.kanban",
   // Configuración
-  "/configuracion/empresa": "Mi Empresa",
-  "/configuracion/usuarios": "Usuarios y Roles",
+  "/configuracion/empresa": "dashboard.miEmpresa",
+  "/configuracion/usuarios": "dashboard.usuarios",
 };
 
 interface DashboardLayoutProps {
@@ -35,10 +37,11 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
   const [checking, setChecking] = useState(true);
-  const title = pageTitles[pathname] || "AGET";
+  const title = t(pageTitleKeys[pathname] || "dashboard.ag");
 
   useEffect(() => {
     const verificarPerfil = async () => {
@@ -67,6 +70,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <Sidebar />
       <div className={styles.mainArea}>
         <Navbar title={title} />
+        <LanguageSwitcher />
         <main className={styles.pageContent}>{children}</main>
       </div>
     </div>

@@ -21,11 +21,13 @@
     "@supabase/supabase-js": "^2.108.2",
     "clsx": "^2.1.1",
     "figma-developer-mcp": "^0.13.2",
+    "i18next": "^27.2.2",
     "lightningcss-linux-x64-gnu": "^1.32.0",
     "lucide-react": "^1.20.0",
     "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-i18next": "^18.0.3",
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {

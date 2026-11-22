@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/ui/AuthProvider";
+import { useTranslation } from "react-i18next";
 import styles from "./layout.module.css";
 
 interface NavbarProps {
@@ -10,6 +11,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ title }: NavbarProps) {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user, signOut } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
@@ -19,7 +21,7 @@ export default function Navbar({ title }: NavbarProps) {
     router.push("/");
   };
 
-  const userName = user?.user_metadata?.nombre || user?.email?.split("@")[0] || "Usuario";
+  const userName = user?.user_metadata?.nombre || user?.email?.split("@")[0] || t("common.name");
 
   return (
     <header className={styles.navbar}>
@@ -40,7 +42,7 @@ export default function Navbar({ title }: NavbarProps) {
               onClick={handleLogout}
               className={styles.dropdownItem}
             >
-              Cerrar Sesión
+              {t("auth.logout")}
             </button>
           </div>
         )}

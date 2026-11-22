@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import styles from "./layout.module.css";
 import {
@@ -19,11 +20,11 @@ import { useState } from "react";
 
 interface NavChild {
   href: string;
-  label: string;
+  labelKey: string;
 }
 
 interface NavSection {
-  label: string;
+  labelKey: string;
   href?: string;
   icon: any;
   children: NavChild[];
@@ -31,72 +32,73 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    label: "Inicio",
+    labelKey: "nav.inicio",
     href: "/inicio",
     icon: LayoutDashboard,
     children: [],
   },
   {
-    label: "RR.HH.",
+    labelKey: "nav.rrhh",
     icon: Users,
     children: [
-      { href: "/rrhh/empleados", label: "Empleados" },
+      { href: "/rrhh/empleados", labelKey: "nav.empleados" },
     ],
   },
   {
-    label: "Inventario",
+    labelKey: "nav.inventario",
     icon: Package,
     children: [
-      { href: "/inventario/productos", label: "Productos" },
-      { href: "/inventario/csv", label: "Importar / Exportar CSV" },
+      { href: "/inventario/productos", labelKey: "nav.productos" },
+      { href: "/inventario/csv", labelKey: "nav.csv" },
     ],
   },
   {
-    label: "Ventas",
+    labelKey: "nav.ventas",
     icon: ShoppingCart,
     children: [
-      { href: "/ventas/pos", label: "Punto de Venta" },
-      { href: "/ventas/clientes", label: "Clientes" },
-      { href: "/ventas/facturas", label: "Facturas" },
-      { href: "/ventas/pagos", label: "Pagos" },
+      { href: "/ventas/pos", labelKey: "nav.pos" },
+      { href: "/ventas/clientes", labelKey: "nav.clientes" },
+      { href: "/ventas/facturas", labelKey: "nav.facturas" },
+      { href: "/ventas/pagos", labelKey: "nav.pagos" },
     ],
   },
   {
-    label: "Sesiones",
+    labelKey: "nav.sesiones",
     icon: Clock,
     children: [
-      { href: "/sesiones", label: "Gestión de Sesiones" },
+      { href: "/sesiones", labelKey: "nav.gestionSesiones" },
     ],
   },
   {
-    label: "Tareas",
+    labelKey: "nav.tareas",
     icon: ClipboardList,
     children: [
-      { href: "/tareas/proyectos", label: "Proyectos y Kanban" },
+      { href: "/tareas/proyectos", labelKey: "nav.proyectos" },
     ],
   },
   {
-    label: "Configuración",
+    labelKey: "nav.configuracion",
     icon: Settings,
     children: [
-      { href: "/configuracion/empresa", label: "Mi Empresa" },
+      { href: "/configuracion/empresa", labelKey: "nav.miEmpresa" },
     ],
   },
 ];
 
 export default function Sidebar() {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
     const expanded: Record<string, boolean> = {};
     navSections.forEach((section) => {
       const hasActiveChild = section.children.some((child) => pathname.startsWith(child.href));
-      if (hasActiveChild) expanded[section.label] = true;
+      if (hasActiveChild) expanded[section.labelKey] = true;
     });
     return expanded;
   });
 
-  const toggleSection = (label: string) => {
-    setExpandedSections((prev) => ({ ...prev, [label]: !prev[label] }));
+  const toggleSection = (labelKey: string) => {
+    setExpandedSections((prev) => ({ ...prev, [labelKey]: !prev[labelKey] }));
   };
 
   const isActive = (href: string) => {
@@ -115,12 +117,12 @@ export default function Sidebar() {
       <nav className={styles.sidebarNav}>
         {navSections.map((section) => {
           const hasChildren = section.children.length > 0;
-          const isExpanded = expandedSections[section.label] ?? hasChildren;
+          const isExpanded = expandedSections[section.labelKey] ?? hasChildren;
 
           if (!hasChildren && section.href) {
             return (
               <Link
-                key={section.label}
+                key={section.labelKey}
                 href={section.href}
                 className={cn(
                   styles.navItem,
@@ -130,21 +132,21 @@ export default function Sidebar() {
                 <span className={styles.navIcon}>
                   <section.icon size={18} />
                 </span>
-                <span>{section.label}</span>
+                <span>{t(section.labelKey)}</span>
               </Link>
             );
           }
 
           return (
-            <div key={section.label} className={styles.navSection}>
+            <div key={section.labelKey} className={styles.navSection}>
               <button
-                onClick={() => toggleSection(section.label)}
+                onClick={() => toggleSection(section.labelKey)}
                 className={cn(styles.navItem, styles.navSectionToggle)}
               >
                 <span className={styles.navIcon}>
                   <section.icon size={18} />
                 </span>
-                <span>{section.label}</span>
+                <span>{t(section.labelKey)}</span>
                 <span className={styles.navChevron}>
                   {isExpanded ? (
                     <ChevronDown size={14} />
@@ -164,7 +166,7 @@ export default function Sidebar() {
                         isActive(child.href) && styles.navChildItemActive
                       )}
                     >
-                      {child.label}
+                      {t(child.labelKey)}
                     </Link>
                   ))}
                 </div>
