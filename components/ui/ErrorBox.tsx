@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslation } from "react-i18next";
 import { ServiceError } from "@/lib/services/supabase-service";
 
 interface ErrorBoxProps {
@@ -6,12 +9,14 @@ interface ErrorBoxProps {
 }
 
 export default function ErrorBox({ error, onRetry }: ErrorBoxProps) {
+  const { t } = useTranslation();
+
   if (!error) return null;
 
   const message =
     error instanceof ServiceError
       ? error.message
-      : error.message || "Ha ocurrido un error inesperado.";
+      : error.message || t("common.unexpected");
 
   return (
     <div className="rounded-lg border border-red-200 bg-red-50 px-6 py-4">
@@ -33,7 +38,7 @@ export default function ErrorBox({ error, onRetry }: ErrorBoxProps) {
         </div>
         <div className="flex-1">
           <h3 className="text-sm font-semibold text-red-800">
-            Error
+            {t("common.error")}
           </h3>
           <p className="mt-1 text-sm text-red-700">{message}</p>
         </div>
@@ -42,7 +47,7 @@ export default function ErrorBox({ error, onRetry }: ErrorBoxProps) {
             onClick={onRetry}
             className="rounded-md bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-200"
           >
-            Reintentar
+            {t("common.retry")}
           </button>
         )}
       </div>

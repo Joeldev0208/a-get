@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import Modal from "./Modal";
 import SubmitButton from "./SubmitButton";
 
@@ -22,11 +23,14 @@ export default function ConfirmDialog({
   onConfirm,
   title,
   message,
-  confirmText = "Confirmar",
-  cancelText = "Cancelar",
+  confirmText,
+  cancelText,
   variant = "danger",
   skipKey,
 }: ConfirmDialogProps) {
+  const { t } = useTranslation();
+  const resolvedConfirmText = confirmText ?? t("common.confirm");
+  const resolvedCancelText = cancelText ?? t("common.cancel");
   const [noPreguntar, setNoPreguntar] = useState(false);
 
   // Reset cuando se abre
@@ -70,7 +74,7 @@ export default function ConfirmDialog({
             onChange={(e) => setNoPreguntar(e.target.checked)}
             className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
-          <span className="text-sm text-gray-500">No volver a preguntar</span>
+          <span className="text-sm text-gray-500">{t("common.noAskAgain")}</span>
         </label>
 
         <div className="flex justify-end gap-2">
@@ -78,13 +82,13 @@ export default function ConfirmDialog({
             onClick={handleClose}
             className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
           >
-            {cancelText}
+            {resolvedCancelText}
           </button>
           <button
             onClick={handleConfirm}
             className={`rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors ${buttonStyles[variant]}`}
           >
-            {confirmText}
+            {resolvedConfirmText}
           </button>
         </div>
       </div>

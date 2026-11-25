@@ -31,7 +31,13 @@
     "total": "Total",
     "noData": "No data available",
     "confirmDelete": "Are you sure you want to delete this item?",
-    "sessionExpired": "Your session expired. Please sign in again."
+    "sessionExpired": "Your session expired. Please sign in again.",
+    "confirm": "Confirm",
+    "unexpected": "An unexpected error occurred.",
+    "retry": "Retry",
+    "noAskAgain": "Don't ask again",
+    "selectPlaceholder": "Select an option...",
+    "none": "-"
   },
   "nav": {
     "inicio": "Home",
@@ -75,11 +81,24 @@
     "loginLink": "Sign In",
     "google": "Or continue with Google",
     "googleLogin": "Sign in with Google",
+    "orContinue": "Or continue with",
+    "googleButton": "Google",
     "logout": "Sign Out",
     "emailRequired": "Email is required",
     "passwordMin": "Password must be at least 6 characters",
     "nameRequired": "Name is required",
-    "successRegister": "Registration successful. You can now sign in."
+    "successRegister": "Registration successful. You can now sign in.",
+    "subtitle": "PYME Management System",
+    "error": {
+      "timeout": "Request timed out. Check your internet connection.",
+      "network": "Could not connect to the authentication server. Check your internet connection and that Supabase environment variables are configured correctly.",
+      "invalidCredentials": "Invalid email or password.",
+      "emailNotConfirmed": "You must confirm your email before signing in. Check your inbox.",
+      "rateLimit": "Too many attempts. Wait a moment and try again.",
+      "validation": "Invalid data. Check the fields and try again.",
+      "google": "Error signing in with Google.",
+      "unexpected": "An unexpected error occurred."
+    }
   },
   "dashboard": {
     "title": "AGET - PYME Management System",
@@ -207,11 +226,224 @@
     "companyUpdated": "Company updated",
     "addUser": "Add User",
     "userRole": "User role",
-    "userCreated": "User created"
+    "userCreated": "User created",
+    "noProfile": "No user profile found. Sign in again.",
+    "noCompany": "You don't have a company assigned. Contact the administrator.",
+    "companyNotFound": "Company not found in the database.",
+    "companyData": "Company Data",
+    "companyNameLabel": "Company Name",
+    "companyNamePlaceholder": "Your company name",
+    "uniqueCode": "Unique Code",
+    "uniqueCodeDescription": "This code is used for employees to link to your company",
+    "createdAt": "Created on",
+    "companyUpdatedSuccess": "Company updated successfully",
+    "errorEmptyName": "The company name cannot be empty",
+    "errorSave": "Error saving changes",
+    "noUsers": "No users registered",
+    "onlyManager": "Only users with role {role} can modify roles.",
+    "clickRole": "Click on a user's role to change it",
+    "noName": "No name",
+    "roles": {
+      "gerente": "Manager",
+      "contador": "Accountant",
+      "cajero_vendedor": "Cashier / Salesperson",
+      "inventario": "Inventory",
+      "rrhh": "HR",
+      "empleado_general": "General Employee"
+    }
   },
   "language": {
     "label": "Language",
     "spanish": "Español",
     "english": "English"
+  },
+  "empresaSelector": {
+    "welcome": "Welcome to AGET",
+    "joinInstruction": "Enter your company code to get started",
+    "createInstruction": "Create a new company for your organization",
+    "companyCode": "Company Code",
+    "companyCodePlaceholder": "AGET-XXXXXX",
+    "companyNameLabel": "Company Name",
+    "companyNamePlaceholder": "Ex: My Company LLC",
+    "joining": "Joining...",
+    "joinCompany": "Join Company",
+    "creating": "Creating...",
+    "createCompany": "Create Company",
+    "demoError": "Could not set up the demo environment. Try creating or joining a company manually.",
+    "profileCreated": "Profile created but could not be verified. Try signing in again.",
+    "companyCreated": "Company created but the profile could not be verified. Try signing in again.",
+    "errorJoin": "Error joining the company",
+    "errorCreate": "Error creating the company",
+    "toggleCreate": "Don't have a company? Create a new one",
+    "toggleJoin": "Already have a company? Join with the code"
+  },
+  "inicio": {
+    "notAuthenticated": "Not authenticated",
+    "noProfile": "User profile not found",
+    "sub": {
+      "pending": "pending",
+      "registered": "registered"
+    },
+    "salesAnalysis": "Sales Analysis",
+    "earningsPeriod": "Earnings for the Period",
+    "estimatedLosses": "Estimated Losses",
+    "netBalance": "Net Balance",
+    "avgInvoice": "Average Invoicing",
+    "invoicesPaid": "Paid invoices",
+    "invoicesOverdue": "Overdue invoices",
+    "netBalanceSub": "Earnings - Losses",
+    "avgInvoiceSub": "Per invoice issued",
+    "topProducts": "Top Products Sold",
+    "noSalesData": "No sales data",
+    "priceVariation": "Products with Price Variation",
+    "noVariationData": "No variation data",
+    "quickAccess": "Quick Access",
+    "newEmployee": "New Employee",
+    "newEmployeeSub": "Add person to the team",
+    "newProject": "New Project",
+    "newProjectSub": "Create project and tasks",
+    "newInvoice": "New Invoice",
+    "newInvoiceSub": "Invoice a customer",
+    "demoData": "Demo Data",
+    "demoDataSub": "Load sample data to view the dashboard with content.",
+    "cost": "Cost",
+    "sale": "Sale",
+    "units": "uds"
+  },
+  "demo": {
+    "pageHeaderSubtitle": "AGET - Demo Mode",
+    "demoMode": "Demo Mode",
+    "signOutDemo": "Sign out demo",
+    "userDemo": "Demo user",
+    "nav": {
+      "inicio": "Home",
+      "rrhh": "HR",
+      "empleados": "Employees",
+      "inventario": "Inventory",
+      "productos": "Products",
+      "ventas": "Sales",
+      "pos": "Point of Sale",
+      "clientes": "Customers",
+      "facturas": "Invoices",
+      "tareas": "Tasks",
+      "kanban": "Kanban Board",
+      "configuracion": "Settings",
+      "miEmpresa": "My Company"
+    },
+    "inicio": {
+      "title": "Home",
+      "totalSales": "Total Sales",
+      "usd": "USD",
+      "pendingSales": "Pending Sales",
+      "invoices": "invoices",
+      "lowStock": "Low Stock",
+      "products": "products",
+      "outOfStock": "Out of Stock",
+      "items": "items",
+      "recentSales": "Recent Sales",
+      "lowStockProducts": "Low Stock Products",
+      "noLowStock": "No low stock products",
+      "searchResult": "{{count}} result(s)",
+      "noProducts": "No products registered",
+      "noProductsFound": "No products found with {{term}}"
+    },
+    "productos": {
+      "title": "Products",
+      "placeholder": "Search by product name or code...",
+      "code": "Code",
+      "name": "Name",
+      "category": "Category",
+      "salePrice": "Sale Price",
+      "cost": "Cost",
+      "stock": "Stock",
+      "noFound": "No products found with {{term}}"
+    },
+    "ventas": {
+      "title": "Sales / POS",
+      "totalSales": "Total Sales",
+      "transactions": "transactions",
+      "income": "Income",
+      "paid": "Paid",
+      "pending": "Pending",
+      "salesHistory": "Sales History",
+      "sale": "Sale",
+      "customer": "Customer",
+      "date": "Date",
+      "total": "Total",
+      "status": "Status",
+      "method": "Method"
+    },
+    "clientes": {
+      "title": "Customers",
+      "directory": "Customer Directory",
+      "name": "Name",
+      "ruc": "RUC",
+      "phone": "Phone",
+      "city": "City"
+    },
+    "empleados": {
+      "title": "HR - Employees",
+      "employees": "Employees",
+      "registered": "registered",
+      "active": "Active",
+      "departments": "Departments",
+      "areas": "areas",
+      "salespeople": "Salespeople",
+      "staff": "staff",
+      "roster": "Employee Roster",
+      "position": "Position",
+      "department": "Department",
+      "email": "Email"
+    },
+    "tareas": {
+      "title": "Tasks / Kanban",
+      "pending": "Pending",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "tasks": "Tasks",
+      "assignedTo": "Assigned to:",
+      "noTasks": "No tasks"
+    },
+    "facturas": {
+      "title": "Invoicing",
+      "issuedInvoices": "Issued Invoices",
+      "invoice": "Invoice",
+      "amount": "Amount"
+    },
+    "configuracion": {
+      "title": "Settings",
+      "company": "Company",
+      "currentUser": "Current User (demo)",
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "demoNote": "This is a <strong>static data demonstration</strong>. All data is displayed directly on the page and is not saved to a database. To use the system with real data, register from the home page."
+    },
+    "status": {
+      "paid": "Paid",
+      "pending": "Pending",
+      "active": "Active",
+      "outOfStock": "Out of Stock",
+      "completed": "Completed"
+    },
+    "payment": {
+      "cash": "Cash",
+      "transfer": "Transfer",
+      "card": "Card",
+      "check": "Check"
+    },
+    "priority": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low",
+      "urgent": "Urgent"
+    }
+  },
+  "demoSeed": {
+    "noActiveCompany": "No active company found. Sign in and select a company first.",
+    "success": "Demo data loaded successfully.",
+    "error": "Demo data could not be loaded. Try again.",
+    "loadDemoData": "Load demo data",
+    "loadingCompany": "Loading company..."
   }
 }

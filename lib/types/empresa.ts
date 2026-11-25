@@ -2,6 +2,8 @@
 // Empresa y Roles
 // ============================================================
 
+import type { TFunction } from "i18next";
+
 export type RolUsuario =
   | "gerente"
   | "contador"
@@ -29,6 +31,7 @@ export interface PerfilUsuario {
   rol: RolUsuario;
   activo: boolean;
   nombre?: string;
+  idioma?: string;
   created_at: string;
   updated_at: string;
   empresas?: { nombre: string; codigo_unico: string } | null;
@@ -42,11 +45,13 @@ export interface PerfilUsuarioInput {
   nombre?: string;
 }
 
-export const ROLES_LABELS: Record<RolUsuario, string> = {
-  gerente: "Gerente",
-  contador: "Contador",
-  cajero_vendedor: "Cajero / Vendedor",
-  inventario: "Inventario",
-  rrhh: "RR.HH.",
-  empleado_general: "Empleado General",
-};
+export function getRolesLabels(t: TFunction): Record<RolUsuario, string> {
+  return {
+    gerente: t("configuracion.roles.gerente"),
+    contador: t("configuracion.roles.contador"),
+    cajero_vendedor: t("configuracion.roles.cajero_vendedor"),
+    inventario: t("configuracion.roles.inventario"),
+    rrhh: t("configuracion.roles.rrhh"),
+    empleado_general: t("configuracion.roles.empleado_general"),
+  };
+}

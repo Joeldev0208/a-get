@@ -7,7 +7,6 @@ import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import styles from "@/components/layout/layout.module.css";
 import { buscarPerfilActual } from "@/lib/services/empresa";
-import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 import Loading from "@/components/ui/Loading";
 
 const pageTitleKeys: Record<string, string> = {
@@ -70,7 +69,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <Sidebar />
       <div className={styles.mainArea}>
         <Navbar title={title} />
-        <LanguageSwitcher />
         <main className={styles.pageContent}>{children}</main>
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import Modal from "./Modal";
 import FormField from "./FormField";
@@ -16,6 +17,7 @@ interface AuthProps {
 }
 
 export default function Auth({ isOpen, onClose, onSuccess, initialMode = "login" }: AuthProps) {
+  const { t } = useTranslation();
   const [modo, setModo] = useState<Modo>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,9 +41,9 @@ export default function Auth({ isOpen, onClose, onSuccess, initialMode = "login"
     e.preventDefault();
     setError(null);
 
-    if (!email.trim()) { setError("El email es obligatorio"); return; }
-    if (!password || password.length < 6) { setError("La contraseña debe tener al menos 6 caracteres"); return; }
-    if (modo === "registro" && !nombre.trim()) { setError("El nombre es obligatorio"); return; }
+    if (!email.trim()) { setError(t("auth.emailRequired")); return; }
+    if (!password || password.length < 6) { setError(t("auth.passwordMin")); return; }
+    if (modo === "registro" && !nombre.trim()) { setError(t("auth.nameRequired")); return; }
 
     try {
       setLoading(true);
@@ -49,7 +51,7 @@ export default function Auth({ isOpen, onClose, onSuccess, initialMode = "login"
 
       // Timeout de seguridad para evitar "carga infinita"
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("La solicitud tardó demasiado. Verifica tu conexión.")), 15000)
+        setTimeout(() => reject(new Error(t("auth.error.timeout"))), 15000)
       );
 
       if (modo === "login") {
@@ -72,32 +74,31 @@ export default function Auth({ isOpen, onClose, onSuccess, initialMode = "login"
         });
         const { error } = await Promise.race([signupPromise, timeoutPromise]);
         if (error) throw error;
-        alert("Registro exitoso. Ahora puedes iniciar sesión.");
+        alert(t("auth.successRegister"));
         cambiarModo("login");
       }
     } catch (err: any) {
       // Manejo detallado de errores
-      const errorName = err?.name || "";
       const errorMsg = err?.message || "";
       const errorCode = err?.code || "";
       const errorStatus = err?.status || "";
 
-      if (errorMsg.includes("tardó demasiado") || errorName === "TimeoutError") {
-        setError("Tiempo de espera agotado. Verifica tu conexión a internet.");
-      } else if (errorName === "AuthRetryableFetchError" || errorMsg.includes("fetch") || errorMsg.includes("network") || errorMsg.includes("ERR_NAME_NOT_RESOLVED")) {
-        setError("No se pudo conectar con el servidor de autenticación. Verifica tu conexión a internet y que las variables de entorno de Supabase estén configuradas correctamente.");
+      if (err?.name === "TimeoutError" || errorMsg.includes(t("auth.error.timeout"))) {
+        setError(t("auth.error.timeout"));
+      } else if (err?.name === "AuthRetryableFetchError" || errorMsg.includes("fetch") || errorMsg.includes("network") || errorMsg.includes("ERR_NAME_NOT_RESOLVED")) {
+        setError(t("auth.error.network"));
       } else if (errorMsg.includes("Invalid login credentials")) {
-        setError("Email o contraseña incorrectos.");
+        setError(t("auth.error.invalidCredentials"));
       } else if (errorMsg.includes("Email not confirmed")) {
-        setError("Debes confirmar tu email antes de iniciar sesión. Revisa tu bandeja de entrada.");
+        setError(t("auth.error.emailNotConfirmed"));
       } else if (errorMsg.includes("rate_limit") || errorMsg.includes("429") || errorStatus === 429) {
-        setError("Demasiados intentos. Espera un momento e inténtalo de nuevo.");
+        setError(t("auth.error.rateLimit"));
       } else if (errorCode === "validation_failed") {
-        setError("Datos inválidos. Revisa los campos e intenta de nuevo.");
+        setError(t("auth.error.validation"));
       } else {
-        setError(err?.message || `Error de conexión (${errorName}). Verifica tu conexión a internet.`);
+        setError(err?.message || t("auth.error.unexpected"));
       }
-      console.error("Auth error detallado:", { name: errorName, message: errorMsg, code: errorCode, status: errorStatus, err });
+      console.error("Auth error detallado:", err);
     } finally {
       setLoading(false);
     }
@@ -115,28 +116,28 @@ export default function Auth({ isOpen, onClose, onSuccess, initialMode = "login"
       });
       if (error) throw error;
     } catch (err: any) {
-      setError(err.message || "Error al iniciar sesión con Google");
+      setError(err.message || t("auth.error.google"));
       setLoading(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={modo === "login" ? "Iniciar Sesión" : "Crear Cuenta"} size="sm">
+    <Modal isOpen={isOpen} onClose={onClose} title={modo === "login" ? t("auth.loginTitle") : t("auth.registerTitle")} size="sm">
       <form onSubmit={handleSubmit} className="space-y-4">
         {modo === "registro" && (
-          <FormField label="Nombre" name="nombre" value={nombre} onChange={setNombre} required placeholder="Tu nombre completo" />
+          <FormField label={t("auth.name")} name="nombre" value={nombre} onChange={setNombre} required placeholder={t("auth.namePlaceholder")} />
         )}
-        <FormField label="Email" name="email" type="email" value={email} onChange={setEmail} required placeholder="correo@ejemplo.com" />
-        <FormField label="Contraseña" name="password" type="password" value={password} onChange={setPassword} required placeholder="••••••" />
+        <FormField label={t("auth.email")} name="email" type="email" value={email} onChange={setEmail} required placeholder={t("auth.emailPlaceholder")} />
+        <FormField label={t("auth.password")} name="password" type="password" value={password} onChange={setPassword} required placeholder={t("auth.passwordPlaceholder")} />
         {error && <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</div>}
-        <SubmitButton loading={loading} text={modo === "login" ? "Iniciar Sesión" : "Registrarse"} />
+        <SubmitButton loading={loading} text={modo === "login" ? t("auth.loginButton") : t("auth.registerButton")} />
 
         <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-300"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-2 text-gray-500">O continúa con</span>
+            <span className="bg-white px-2 text-gray-500">{t("auth.orContinue")}</span>
           </div>
         </div>
 
@@ -152,22 +153,22 @@ export default function Auth({ isOpen, onClose, onSuccess, initialMode = "login"
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          Google
+          {t("auth.googleButton")}
         </button>
 
         <div className="text-center text-sm">
           {modo === "login" ? (
             <p className="text-gray-600">
-              ¿No tienes cuenta?{" "}
+              {t("auth.noAccount")}{" "}
               <button type="button" onClick={() => cambiarModo("registro")} className="font-medium text-blue-600 hover:text-blue-500">
-                Regístrate
+                {t("auth.registerLink")}
               </button>
             </p>
           ) : (
             <p className="text-gray-600">
-              ¿Ya tienes cuenta?{" "}
+              {t("auth.haveAccount")}{" "}
               <button type="button" onClick={() => cambiarModo("login")} className="font-medium text-blue-600 hover:text-blue-500">
-                Inicia sesión
+                {t("auth.loginLink")}
               </button>
             </p>
           )}

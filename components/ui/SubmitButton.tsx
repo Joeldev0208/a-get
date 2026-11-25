@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 interface SubmitButtonProps {
@@ -14,10 +15,12 @@ interface SubmitButtonProps {
 export default function SubmitButton({
   loading,
   text,
-  loadingText = "Guardando...",
+  loadingText,
   disabled = false,
   variant = "primary",
 }: SubmitButtonProps) {
+  const { t } = useTranslation();
+  const resolvedLoadingText = loadingText ?? t("common.saving");
   const variantClasses = {
     primary:
       "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-200",
@@ -37,7 +40,7 @@ export default function SubmitButton({
       )}
     >
       {loading && <Loader2 size={16} className="animate-spin" />}
-      {loading ? loadingText : text}
+      {loading ? resolvedLoadingText : text}
     </button>
   );
 }

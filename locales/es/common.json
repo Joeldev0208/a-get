@@ -31,7 +31,13 @@
     "total": "Total",
     "noData": "No hay datos disponibles",
     "confirmDelete": "¿Estás seguro de que quieres eliminar este elemento?",
-    "sessionExpired": "Tu sesión expiró. Vuelve a iniciar sesión."
+    "sessionExpired": "Tu sesión expiró. Vuelve a iniciar sesión.",
+    "confirm": "Confirmar",
+    "unexpected": "Ha ocurrido un error inesperado.",
+    "retry": "Reintentar",
+    "noAskAgain": "No volver a preguntar",
+    "selectPlaceholder": "Seleccionar...",
+    "none": "—"
   },
   "nav": {
     "inicio": "Inicio",
@@ -75,11 +81,24 @@
     "loginLink": "Inicia sesión",
     "google": "O continúa con Google",
     "googleLogin": "Iniciar sesión con Google",
+    "orContinue": "O continúa con",
+    "googleButton": "Google",
     "logout": "Cerrar Sesión",
     "emailRequired": "El email es obligatorio",
     "passwordMin": "La contraseña debe tener al menos 6 caracteres",
     "nameRequired": "El nombre es obligatorio",
-    "successRegister": "Registro exitoso. Ahora puedes iniciar sesión."
+    "successRegister": "Registro exitoso. Ahora puedes iniciar sesión.",
+    "subtitle": "Sistema de Gestión PYME",
+    "error": {
+      "timeout": "Tiempo de espera agotado. Verifica tu conexión a internet.",
+      "network": "No se pudo conectar con el servidor de autenticación. Verifica tu conexión a internet y que las variables de entorno de Supabase estén configuradas correctamente.",
+      "invalidCredentials": "Email o contraseña incorrectos.",
+      "emailNotConfirmed": "Debes confirmar tu email antes de iniciar sesión. Revisa tu bandeja de entrada.",
+      "rateLimit": "Demasiados intentos. Espera un momento e inténtalo de nuevo.",
+      "validation": "Datos inválidos. Revisa los campos e intenta de nuevo.",
+      "google": "Error al iniciar sesión con Google",
+      "unexpected": "Ha ocurrido un error inesperado."
+    }
   },
   "dashboard": {
     "title": "AGET - Sistema de Gestión PYME",
@@ -207,11 +226,224 @@
     "companyUpdated": "Empresa actualizada",
     "addUser": "Agregar Usuario",
     "userRole": "Rol del usuario",
-    "userCreated": "Usuario creado"
+    "userCreated": "Usuario creado",
+    "noProfile": "No se encontró un perfil de usuario. Inicia sesión nuevamente.",
+    "noCompany": "No tienes una empresa asignada. Contacta al administrador.",
+    "companyNotFound": "No se encontró la empresa en la base de datos.",
+    "companyData": "Datos de la Empresa",
+    "companyNameLabel": "Nombre de la Empresa",
+    "companyNamePlaceholder": "Nombre de tu empresa",
+    "uniqueCode": "Código Único",
+    "uniqueCodeDescription": "Este código se usa para que los empleados se vinculen a tu empresa",
+    "createdAt": "Creada el",
+    "companyUpdatedSuccess": "Empresa actualizada correctamente",
+    "errorEmptyName": "El nombre de la empresa no puede estar vacío",
+    "errorSave": "Error al guardar los cambios",
+    "noUsers": "No hay usuarios registrados",
+    "onlyManager": "Solo los usuarios con rol {role} pueden modificar roles.",
+    "clickRole": "Haz clic en el rol de un usuario para cambiarlo",
+    "noName": "Sin nombre",
+    "roles": {
+      "gerente": "Gerente",
+      "contador": "Contador",
+      "cajero_vendedor": "Cajero / Vendedor",
+      "inventario": "Inventario",
+      "rrhh": "RR.HH.",
+      "empleado_general": "Empleado General"
+    }
   },
   "language": {
     "label": "Idioma",
     "spanish": "Español",
     "english": "English"
+  },
+  "empresaSelector": {
+    "welcome": "Bienvenido a AGET",
+    "joinInstruction": "Ingresa el código de tu empresa para comenzar",
+    "createInstruction": "Crea una empresa nueva para tu organización",
+    "companyCode": "Código de empresa",
+    "companyCodePlaceholder": "AGET-XXXXXX",
+    "companyNameLabel": "Nombre de la empresa",
+    "companyNamePlaceholder": "Ej: Mi Empresa SRL",
+    "joining": "Uniendo...",
+    "joinCompany": "Unirse a la empresa",
+    "creating": "Creando...",
+    "createCompany": "Crear empresa",
+    "demoError": "No se pudo configurar el entorno de demostración. Intenta crear o unirte a una empresa manualmente.",
+    "profileCreated": "Perfil creado pero no se pudo verificar. Intenta iniciar sesión de nuevo.",
+    "companyCreated": "Empresa creada pero el perfil no se pudo verificar. Intenta iniciar sesión de nuevo.",
+    "errorJoin": "Error al unirse a la empresa",
+    "errorCreate": "Error al crear la empresa",
+    "toggleCreate": "¿No tienes una empresa? Crea una nueva",
+    "toggleJoin": "¿Ya tienes una empresa? Únete con el código"
+  },
+  "inicio": {
+    "notAuthenticated": "No autenticado",
+    "noProfile": "No se encontró perfil de usuario",
+    "sub": {
+      "pending": "pendientes",
+      "registered": "registrados"
+    },
+    "salesAnalysis": "Análisis de Ventas",
+    "earningsPeriod": "Ganancias del Período",
+    "estimatedLosses": "Pérdidas Estimadas",
+    "netBalance": "Balance Neto",
+    "avgInvoice": "Facturación Promedio",
+    "invoicesPaid": "Facturas pagadas",
+    "invoicesOverdue": "Facturas vencidas",
+    "netBalanceSub": "Ganancias - Pérdidas",
+    "avgInvoiceSub": "Por factura emitida",
+    "topProducts": "Top Productos Vendidos",
+    "noSalesData": "Sin datos de ventas",
+    "priceVariation": "Productos con Variación de Precio",
+    "noVariationData": "Sin datos de variación",
+    "quickAccess": "Accesos Rápidos",
+    "newEmployee": "Nuevo Empleado",
+    "newEmployeeSub": "Agregar persona al equipo",
+    "newProject": "Nuevo Proyecto",
+    "newProjectSub": "Crear proyecto y tareas",
+    "newInvoice": "Nueva Factura",
+    "newInvoiceSub": "Facturar a un cliente",
+    "demoData": "Datos de Demostración",
+    "demoDataSub": "Carga datos de ejemplo para ver el dashboard con contenido.",
+    "cost": "Costo",
+    "sale": "Venta",
+    "units": "uds"
+  },
+  "demo": {
+    "pageHeaderSubtitle": "AGET - Modo Demostración",
+    "demoMode": "Modo Demostración",
+    "signOutDemo": "Cerrar sesión demo",
+    "userDemo": "Usuario demo",
+    "nav": {
+      "inicio": "Inicio",
+      "rrhh": "RR.HH.",
+      "empleados": "Empleados",
+      "inventario": "Inventario",
+      "productos": "Productos",
+      "ventas": "Ventas",
+      "pos": "Punto de Venta",
+      "clientes": "Clientes",
+      "facturas": "Facturas",
+      "tareas": "Tareas",
+      "kanban": "Tablero Kanban",
+      "configuracion": "Configuración",
+      "miEmpresa": "Mi Empresa"
+    },
+    "inicio": {
+      "title": "Inicio",
+      "totalSales": "Total Ventas",
+      "usd": "USD",
+      "pendingSales": "Ventas Pendientes",
+      "invoices": "facturas",
+      "lowStock": "Stock Bajo",
+      "products": "productos",
+      "outOfStock": "Productos Agotados",
+      "items": "ítems",
+      "recentSales": "Ventas recientes",
+      "lowStockProducts": "Productos con stock bajo",
+      "noLowStock": "Sin productos con stock bajo",
+      "searchResult": "{{count}} resultado(s)",
+      "noProducts": "No hay productos registrados",
+      "noProductsFound": "No se encontraron productos con {{term}}"
+    },
+    "productos": {
+      "title": "Productos",
+      "placeholder": "Buscar por nombre o código del producto...",
+      "code": "Código",
+      "name": "Nombre",
+      "category": "Categoría",
+      "salePrice": "Precio Venta",
+      "cost": "Costo",
+      "stock": "Stock",
+      "noFound": "No se encontraron productos con {{term}}"
+    },
+    "ventas": {
+      "title": "Ventas / POS",
+      "totalSales": "Total Ventas",
+      "transactions": "transacciones",
+      "income": "Ingresos",
+      "paid": "Pagadas",
+      "pending": "Pendientes",
+      "salesHistory": "Historial de ventas",
+      "sale": "Venta",
+      "customer": "Cliente",
+      "date": "Fecha",
+      "total": "Total",
+      "status": "Estado",
+      "method": "Método"
+    },
+    "clientes": {
+      "title": "Clientes",
+      "directory": "Directorio de clientes",
+      "name": "Nombre",
+      "ruc": "RUC",
+      "phone": "Teléfono",
+      "city": "Ciudad"
+    },
+    "empleados": {
+      "title": "RR.HH. - Empleados",
+      "employees": "Empleados",
+      "registered": "registrados",
+      "active": "Activos",
+      "departments": "Departamentos",
+      "areas": "áreas",
+      "salespeople": "Vendedores",
+      "staff": "personal",
+      "roster": "Plantilla de empleados",
+      "position": "Cargo",
+      "department": "Departamento",
+      "email": "Email"
+    },
+    "tareas": {
+      "title": "Tareas / Kanban",
+      "pending": "Pendiente",
+      "inProgress": "En curso",
+      "completed": "Completada",
+      "tasks": "Tareas",
+      "assignedTo": "Asignado a:",
+      "noTasks": "Sin tareas"
+    },
+    "facturas": {
+      "title": "Facturación",
+      "issuedInvoices": "Facturas emitidas",
+      "invoice": "Factura",
+      "amount": "Monto"
+    },
+    "configuracion": {
+      "title": "Configuración",
+      "company": "Empresa",
+      "currentUser": "Usuario actual (demo)",
+      "name": "Nombre",
+      "email": "Email",
+      "role": "Rol",
+      "demoNote": "Esta es una <strong>demostración con datos estáticos</strong>. Todos los datos se muestran directamente en la página y no se guardan en una base de datos. Para usar el sistema con datos reales, regístrese desde el inicio."
+    },
+    "status": {
+      "paid": "Pagada",
+      "pending": "Pendiente",
+      "active": "Activo",
+      "outOfStock": "Agotado",
+      "completed": "Completada"
+    },
+    "payment": {
+      "cash": "Efectivo",
+      "transfer": "Transferencia",
+      "card": "Tarjeta",
+      "check": "Cheque"
+    },
+    "priority": {
+      "high": "Alta",
+      "medium": "Media",
+      "low": "Baja",
+      "urgent": "Urgente"
+    }
+  },
+  "demoSeed": {
+    "noActiveCompany": "No se encontró una empresa activa. Inicia sesión y selecciona una empresa primero.",
+    "success": "Datos de demostración cargados correctamente.",
+    "error": "No se pudieron cargar los datos de demostración. Inténtalo de nuevo.",
+    "loadDemoData": "Cargar datos de demo",
+    "loadingCompany": "Cargando empresa..."
   }
 }

@@ -101,6 +101,26 @@ export async function actualizarRol(perfilId: string, rol: RolUsuario): Promise<
   if (error) throw new Error(`Error al actualizar rol: ${error.message}`);
 }
 
+export async function actualizarIdiomaUsuario(perfilId: string, idioma: string): Promise<void> {
+  const { error } = await supabase
+    .from("perfiles_usuario")
+    .update({ idioma })
+    .eq("id", perfilId);
+
+  if (error) throw new Error(`Error al actualizar idioma: ${error.message}`);
+}
+
+export async function obtenerIdiomaUsuario(perfilId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("perfiles_usuario")
+    .select("idioma")
+    .eq("id", perfilId)
+    .maybeSingle();
+
+  if (error) return null;
+  return data?.idioma ?? null;
+}
+
 export async function buscarPerfilActual(): Promise<PerfilUsuario | null> {
   const { data: { session } } = await supabase.auth.getSession();
   const userId = session?.user?.id;

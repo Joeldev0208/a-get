@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 import { Building2, KeyRound, ArrowRight } from "lucide-react";
 import { useAuth } from "@/components/ui/AuthProvider";
@@ -17,6 +18,7 @@ const CODIGO_EMPRESA_DEMO = "DEMO2026";
 type Modo = "unirse" | "crear";
 
 export default function EmpresaSelector() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(true);
@@ -48,7 +50,7 @@ export default function EmpresaSelector() {
           console.error("Demo setup error:", err);
           sessionStorage.removeItem("demo_mode");
           setError(
-            "No se pudo configurar el entorno de demostración. Intenta crear o unirte a una empresa manualmente."
+            t("empresaSelector.demoError")
           );
         }
         return;
@@ -86,13 +88,13 @@ export default function EmpresaSelector() {
 
       const perfil = await buscarPerfilActual();
       if (!perfil) {
-        setError("Perfil creado pero no se pudo verificar. Intenta iniciar sesión de nuevo.");
+        setError(t("empresaSelector.profileCreated"));
         return;
       }
 
       router.push("/inicio");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al unirse a la empresa");
+      setError(err instanceof Error ? err.message : t("empresaSelector.errorJoin"));
     } finally {
       setLoading(false);
     }
@@ -119,13 +121,13 @@ export default function EmpresaSelector() {
 
       const perfil = await buscarPerfilActual();
       if (!perfil) {
-        setError("Empresa creada pero el perfil no se pudo verificar. Intenta iniciar sesión de nuevo.");
+        setError(t("empresaSelector.companyCreated"));
         return;
       }
 
       router.push("/inicio");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al crear la empresa");
+      setError(err instanceof Error ? err.message : t("empresaSelector.errorCreate"));
     } finally {
       setLoading(false);
     }
@@ -146,12 +148,12 @@ export default function EmpresaSelector() {
             <Building2 size={28} className="text-blue-600" />
           </div>
           <h2 className="text-xl font-bold text-gray-900">
-            Bienvenido a AGET
+            {t("empresaSelector.welcome")}
           </h2>
           <p className="mt-1 text-sm text-gray-500">
             {modo === "unirse"
-              ? "Ingresa el código de tu empresa para comenzar"
-              : "Crea una empresa nueva para tu organización"}
+              ? t("empresaSelector.joinInstruction")
+              : t("empresaSelector.createInstruction")}
           </p>
         </div>
 
@@ -169,7 +171,7 @@ export default function EmpresaSelector() {
             <form onSubmit={handleUnirse} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Código de empresa
+                  {t("empresaSelector.companyCode")}
                 </label>
                 <div className="relative">
                   <KeyRound
@@ -180,7 +182,7 @@ export default function EmpresaSelector() {
                     type="text"
                     value={codigoEmpresa}
                     onChange={(e) => setCodigoEmpresa(e.target.value.toUpperCase())}
-                    placeholder="AGET-XXXXXX"
+                    placeholder={t("empresaSelector.companyCodePlaceholder")}
                     className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     disabled={loading}
                   />
@@ -198,11 +200,11 @@ export default function EmpresaSelector() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    Uniendo...
+                    {t("empresaSelector.joining")}
                   </>
                 ) : (
                   <>
-                    Unirse a la empresa
+                    {t("empresaSelector.joinCompany")}
                     <ArrowRight size={16} />
                   </>
                 )}
@@ -212,7 +214,7 @@ export default function EmpresaSelector() {
             <form onSubmit={handleCrear} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Nombre de la empresa
+                  {t("empresaSelector.companyNameLabel")}
                 </label>
                 <div className="relative">
                   <Building2
@@ -223,7 +225,7 @@ export default function EmpresaSelector() {
                     type="text"
                     value={nombreEmpresa}
                     onChange={(e) => setNombreEmpresa(e.target.value)}
-                    placeholder="Ej: Mi Empresa SRL"
+                    placeholder={t("empresaSelector.companyNamePlaceholder")}
                     className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     disabled={loading}
                   />
@@ -241,11 +243,11 @@ export default function EmpresaSelector() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    Creando...
+                    {t("empresaSelector.creating")}
                   </>
                 ) : (
                   <>
-                    Crear empresa
+                    {t("empresaSelector.createCompany")}
                     <ArrowRight size={16} />
                   </>
                 )}
@@ -262,8 +264,8 @@ export default function EmpresaSelector() {
               disabled={loading}
             >
               {modo === "unirse"
-                ? "¿No tienes una empresa? Crea una nueva"
-                : "¿Ya tienes una empresa? Únete con el código"}
+                ? t("empresaSelector.toggleCreate")
+                : t("empresaSelector.toggleJoin")}
             </button>
           </div>
         </div>

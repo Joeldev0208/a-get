@@ -36,10 +36,14 @@ CREATE TABLE IF NOT EXISTS perfiles_usuario (
   rol rol_usuario NOT NULL DEFAULT 'empleado_general',
   activo BOOLEAN NOT NULL DEFAULT TRUE,
   nombre TEXT,
+  idioma TEXT DEFAULT 'en',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(user_id, empresa_id)
 );
+
+-- Aplicar columna idioma en bases de datos ya existentes (idempotente)
+ALTER TABLE perfiles_usuario ADD COLUMN IF NOT EXISTS idioma TEXT DEFAULT 'en';
 
 -- ============================================================
 -- 2. INVENTARIO

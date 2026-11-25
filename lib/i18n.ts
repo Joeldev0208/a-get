@@ -11,7 +11,7 @@ import enTranslations from "@/locales/en/common.json";
  */
 export const supportedLanguages = ["es", "en"] as const;
 export type SupportedLanguage = (typeof supportedLanguages)[number];
-export const defaultLanguage: SupportedLanguage = "es";
+export const defaultLanguage: SupportedLanguage = "en";
 
 const resources = {
   es: { translation: esTranslations },
