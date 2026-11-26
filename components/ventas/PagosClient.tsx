@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import PageHeader from "@/components/layout/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import Modal from "@/components/ui/Modal";
@@ -28,6 +29,7 @@ function PagoForm({ isOpen, onClose, onSuccess, facturas, empresaId }: {
   isOpen: boolean; onClose: () => void; onSuccess: () => void;
   facturas: Factura[]; empresaId: string;
 }) {
+  const { t } = useTranslation();
   const [facturaId, setFacturaId] = useState("");
   const [monto, setMonto] = useState("");
   const [metodo, setMetodo] = useState("efectivo");
@@ -38,8 +40,8 @@ function PagoForm({ isOpen, onClose, onSuccess, facturas, empresaId }: {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!facturaId) { setError("Debes seleccionar una factura"); return; }
-    if (!monto || Number(monto) <= 0) { setError("El monto debe ser mayor a 0"); return; }
+    if (!facturaId) { setError("You must select an invoice"); return; }
+    if (!monto || Number(monto) <= 0) { setError("Amount must be greater than 0"); return; }
     try {
       setLoading(true);
       setError(null);
@@ -54,7 +56,7 @@ function PagoForm({ isOpen, onClose, onSuccess, facturas, empresaId }: {
       onClose();
       setFacturaId(""); setMonto(""); setMetodo("efectivo"); setReferencia("");
     } catch (err: any) {
-      setError(err.message || "Error al registrar pago");
+      setError(err.message || "Error registering payment");
     } finally {
       setLoading(false);
     }
@@ -66,24 +68,24 @@ function PagoForm({ isOpen, onClose, onSuccess, facturas, empresaId }: {
   }));
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Registrar Pago" size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title="Register Payment" size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <FormField label="Factura" name="facturaId" type="select" value={facturaId} onChange={setFacturaId} required options={facturaOptions} />
+        <FormField label={t("ventas.invoice")} name="facturaId" type="select" value={facturaId} onChange={setFacturaId} required options={facturaOptions} />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label="Monto" name="monto" type="number" value={monto} onChange={setMonto} required placeholder="0.00" min={0.01} step={0.01} />
-          <FormField label="Fecha de Pago" name="fechaPago" type="date" value={fechaPago} onChange={setFechaPago} required />
-          <FormField label="Método" name="metodo" type="select" value={metodo} onChange={setMetodo}
+          <FormField label={t("common.amount")} name="monto" type="number" value={monto} onChange={setMonto} required placeholder="0.00" min={0.01} step={0.01} />
+          <FormField label="Payment Date" name="fechaPago" type="date" value={fechaPago} onChange={setFechaPago} required />
+          <FormField label={t("ventas.paymentMethod")} name="metodo" type="select" value={metodo} onChange={setMetodo}
             options={[
-              { value: "efectivo", label: "Efectivo" },
-              { value: "transferencia", label: "Transferencia" },
-              { value: "tarjeta", label: "Tarjeta" },
-              { value: "cheque", label: "Cheque" },
+              { value: "efectivo", label: t("ventas.cash") },
+              { value: "transferencia", label: t("ventas.transfer") },
+              { value: "tarjeta", label: t("ventas.card") },
+              { value: "cheque", label: t("ventas.check") },
             ]}
           />
-          <FormField label="Referencia" name="referencia" value={referencia} onChange={setReferencia} placeholder="Nº de referencia (opcional)" />
+          <FormField label="Reference" name="referencia" value={referencia} onChange={setReferencia} placeholder="Reference number (optional)" />
         </div>
         {error && <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</div>}
-        <SubmitButton loading={loading} text="Registrar Pago" />
+        <SubmitButton loading={loading} text="Register Payment" />
       </form>
     </Modal>
   );
@@ -96,7 +98,8 @@ function NuevoPagoBtn({ onSuccess, facturas, empresaId }: {
   return (
     <>
       <button onClick={() => setIsOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700">
-        <Plus size={16} /> Registrar Pago
+        <Plus size={16} />
+        Register Payment
       </button>
       <PagoForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} facturas={facturas} empresaId={empresaId} />
     </>
@@ -104,6 +107,15 @@ function NuevoPagoBtn({ onSuccess, facturas, empresaId }: {
 }
 
 export default function PagosClient({ initialData, initialFacturas, empresaId }: PagosClientProps) {
+  const { t, i18n: i18nInstance } = useTranslation();
+
+  const metodoLabel = (m: string) => {
+    if (m === "efectivo") return t("ventas.cash");
+    if (m === "transferencia") return t("ventas.transfer");
+    if (m === "tarjeta") return t("ventas.card");
+    return t("ventas.check");
+  };
+
   const [data, setData] = useState(initialData);
   const [facturas, setFacturas] = useState(initialFacturas);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -129,7 +141,7 @@ export default function PagosClient({ initialData, initialFacturas, empresaId }:
         await eliminarPago(pagoToDelete, empresaId);
         refresh();
       } catch (e: any) {
-        alert(`Error al eliminar: ${e.message}`);
+        alert(`Error deleting: ${e.message}`);
       }
       setPagoToDelete(null);
     }
@@ -138,14 +150,14 @@ export default function PagosClient({ initialData, initialFacturas, empresaId }:
   return (
     <div>
       <PageHeader
-        title="Pagos"
+        title={t("ventas.pagos")}
         actions={<NuevoPagoBtn onSuccess={refresh} facturas={facturas} empresaId={empresaId} />}
       />
 
       {data.length === 0 ? (
         <EmptyState
-          title="No hay pagos registrados"
-          description="Registra pagos asociados a las facturas."
+          title="No payments registered"
+          description="Register payments associated with invoices."
           action={<NuevoPagoBtn onSuccess={refresh} facturas={facturas} empresaId={empresaId} />}
         />
       ) : (
@@ -153,24 +165,24 @@ export default function PagosClient({ initialData, initialFacturas, empresaId }:
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Factura</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Fecha</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Método</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Monto</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Referencia</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("ventas.invoice")}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.date")}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("ventas.paymentMethod")}</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.amount")}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Reference</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {data.map((pago) => (
                 <tr key={pago.id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{pago.facturas?.numero || "—"}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{new Date(pago.fecha_pago).toLocaleDateString("es-DO")}</td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{pago.facturas?.numero || t("common.none")}</td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{new Date(pago.fecha_pago).toLocaleDateString(i18nInstance.language === "en" ? "en-US" : "es-DO")}</td>
                   <td className="whitespace-nowrap px-6 py-4">
-                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${metodoStyles[pago.metodo]}`}>{pago.metodo}</span>
+                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${metodoStyles[pago.metodo]}`}>{metodoLabel(pago.metodo)}</span>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-semibold text-gray-900">${pago.monto.toLocaleString()}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{pago.referencia || "—"}</td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{pago.referencia || t("common.none")}</td>
                   <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
                     <button
                       onClick={() => handleEliminar(pago.id)}
@@ -190,10 +202,10 @@ export default function PagosClient({ initialData, initialFacturas, empresaId }:
         isOpen={confirmOpen}
         onClose={() => { setConfirmOpen(false); setPagoToDelete(null); }}
         onConfirm={confirmarEliminar}
-        title="Eliminar Pago"
-        message="¿Estás seguro de eliminar este pago? Esta acción no se puede deshacer."
-        confirmText="Eliminar"
-        cancelText="Cancelar"
+        title="Delete Payment"
+        message={t("common.confirmDelete")}
+        confirmText={t("common.delete")}
+        cancelText={t("common.cancel")}
         variant="danger"
       />
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import Modal from "@/components/ui/Modal";
 import FormField from "@/components/ui/FormField";
 import SubmitButton from "@/components/ui/SubmitButton";
@@ -16,6 +17,7 @@ interface SesionFormProps {
 }
 
 export default function SesionForm({ isOpen, onClose, onSuccess, sesion }: SesionFormProps) {
+  const { t, i18n: i18nInstance } = useTranslation();
   const [totalInicial, setTotalInicial] = useState("");
   const [totalFinal, setTotalFinal] = useState("");
   const [observaciones, setObservaciones] = useState("");
@@ -43,7 +45,7 @@ export default function SesionForm({ isOpen, onClose, onSuccess, sesion }: Sesio
 
       const perfil = await obtenerPerfilActual();
       if (!perfil) {
-        throw new Error("No se pudo obtener el perfil de usuario");
+        throw new Error(t("configuracion.noProfile"));
       }
 
       if (esApertura) {
@@ -61,7 +63,7 @@ export default function SesionForm({ isOpen, onClose, onSuccess, sesion }: Sesio
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || "Error al procesar la sesión");
+      setError(err.message || t("common.unexpected"));
     } finally {
       setLoading(false);
     }
@@ -71,13 +73,13 @@ export default function SesionForm({ isOpen, onClose, onSuccess, sesion }: Sesio
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={esApertura ? "Abrir Sesión" : "Cerrar Sesión"}
+      title={esApertura ? t("sesiones.openSession") : t("sesiones.closeSession")}
       size="sm"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {esApertura && (
           <FormField
-            label="Total Inicial"
+            label={t("sesiones.initialAmount")}
             name="totalInicial"
             type="number"
             value={totalInicial}
@@ -91,20 +93,24 @@ export default function SesionForm({ isOpen, onClose, onSuccess, sesion }: Sesio
         {esCierre && (
           <>
             <div className="rounded-lg bg-blue-50 p-3 text-sm text-blue-700">
-              <p className="font-medium">Sesión iniciada:</p>
+              <p className="font-medium">Session started:</p>
               <p className="mt-1">
-                {new Date(sesion.fecha_apertura).toLocaleString("es-DO", {
-                  dateStyle: "long",
-                  timeStyle: "short",
-                })}
+                {new Date(sesion.fecha_apertura).toLocaleString(
+                  i18nInstance.language === "en" ? "en-US" : "es-DO",
+                  {
+                    dateStyle: "long",
+                    timeStyle: "short",
+                  }
+                )}
               </p>
               <p className="mt-1">
-                Total inicial: <strong>${Number(sesion.total_inicial).toFixed(2)}</strong>
+                {t("sesiones.initialAmount")}:{" "}
+                <strong>${Number(sesion.total_inicial).toFixed(2)}</strong>
               </p>
             </div>
 
             <FormField
-              label="Total Final"
+              label={t("sesiones.finalAmount")}
               name="totalFinal"
               type="number"
               value={totalFinal}
@@ -119,13 +125,13 @@ export default function SesionForm({ isOpen, onClose, onSuccess, sesion }: Sesio
 
         <div className="space-y-1.5">
           <label className="block text-sm font-medium text-gray-700">
-            Observaciones
+            {t("sesiones.observations")}
           </label>
           <textarea
             name="observaciones"
             value={observaciones}
             onChange={(e) => setObservaciones(e.target.value)}
-            placeholder="Notas opcionales..."
+            placeholder="Optional notes..."
             rows={3}
             className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
@@ -139,7 +145,7 @@ export default function SesionForm({ isOpen, onClose, onSuccess, sesion }: Sesio
 
         <SubmitButton
           loading={loading}
-          text={esApertura ? "Abrir Sesión" : "Cerrar Sesión"}
+          text={esApertura ? t("sesiones.openSession") : t("sesiones.closeSession")}
         />
       </form>
     </Modal>

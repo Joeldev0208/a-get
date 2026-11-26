@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import PageHeader from "@/components/layout/PageHeader";
 import Loading from "@/components/ui/Loading";
 import EmptyState from "@/components/ui/EmptyState";
@@ -31,6 +32,7 @@ interface EmpleadoFormProps {
 
 function EmpleadoForm({ isOpen, onClose, onSuccess, empresaId, departamentos, empleado }: EmpleadoFormProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [puesto, setPuesto] = useState("");
@@ -55,9 +57,9 @@ function EmpleadoForm({ isOpen, onClose, onSuccess, empresaId, departamentos, em
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nombre.trim()) { setError("El nombre es obligatorio"); return; }
-    if (!email.trim()) { setError("El email es obligatorio"); return; }
-    if (!puesto.trim()) { setError("El puesto es obligatorio"); return; }
+    if (!nombre.trim()) { setError(t("auth.nameRequired")); return; }
+    if (!email.trim()) { setError(t("auth.emailRequired")); return; }
+    if (!puesto.trim()) { setError("Position is required"); return; }
 
     const payload = {
       nombre: nombre.trim(),
@@ -79,7 +81,7 @@ function EmpleadoForm({ isOpen, onClose, onSuccess, empresaId, departamentos, em
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || "Error al guardar empleado");
+      setError(err.message || "Error saving employee");
     } finally {
       setLoading(false);
     }
@@ -88,30 +90,30 @@ function EmpleadoForm({ isOpen, onClose, onSuccess, empresaId, departamentos, em
   const deptoOptions = departamentos.map((d) => ({ value: d.id, label: d.nombre }));
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={esEdicion ? "Editar Empleado" : "Nuevo Empleado"} size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title={esEdicion ? "Edit Employee" : t("rrhh.addEmployee")} size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label="Nombre" name="nombre" value={nombre} onChange={setNombre} required placeholder="Nombre completo" />
-          <FormField label="Email" name="email" type="email" value={email} onChange={setEmail} required placeholder="correo@ejemplo.com" />
-          <FormField label="Puesto" name="puesto" value={puesto} onChange={setPuesto} required placeholder="Ej: Desarrollador" />
-          <FormField label="Salario" name="salario" type="number" value={salario} onChange={setSalario} placeholder="0.00" min={0} step={0.01} />
+          <FormField label={t("common.name")} name="nombre" value={nombre} onChange={setNombre} required placeholder="Full name" />
+          <FormField label={t("common.email")} name="email" type="email" value={email} onChange={setEmail} required placeholder={t("auth.emailPlaceholder")} />
+          <FormField label={t("rrhh.position")} name="puesto" value={puesto} onChange={setPuesto} required placeholder="E.g. Developer" />
+          <FormField label={t("rrhh.salary")} name="salario" type="number" value={salario} onChange={setSalario} placeholder="0.00" min={0} step={0.01} />
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-gray-700">Departamento</label>
+            <label className="block text-sm font-medium text-gray-700">{t("rrhh.department")}</label>
             <select
               value={departamentoId}
               onChange={(e) => setDepartamentoId(e.target.value)}
               className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option value="">Sin departamento</option>
+              <option value="">No department</option>
               {departamentos.map((d) => (
                 <option key={d.id} value={d.id}>{d.nombre}</option>
               ))}
             </select>
           </div>
-          <FormField label="Estado" name="activo" type="select" value={activo} onChange={setActivo} options={[{ value: "true", label: "Activo" }, { value: "false", label: "Inactivo" }]} />
+          <FormField label={t("common.status")} name="activo" type="select" value={activo} onChange={setActivo} options={[{ value: "true", label: t("common.active") }, { value: "false", label: t("common.inactive") }]} />
         </div>
         {error && <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</div>}
-        <SubmitButton loading={loading} text={esEdicion ? "Actualizar Empleado" : "Crear Empleado"} />
+        <SubmitButton loading={loading} text={esEdicion ? "Update Employee" : "Create Employee"} />
       </form>
     </Modal>
   );
@@ -119,12 +121,13 @@ function EmpleadoForm({ isOpen, onClose, onSuccess, empresaId, departamentos, em
 
 // ── Botón wrapper: Nuevo ────────────────────────────────────────
 function NuevoEmpleadoBtn({ onSuccess, empresaId, departamentos }: { onSuccess: () => void; empresaId: string; departamentos: Departamento[] }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
       <button onClick={() => setIsOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700">
         <Plus size={16} />
-        Nuevo Empleado
+        {t("rrhh.addEmployee")}
       </button>
       <EmpleadoForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} empresaId={empresaId} departamentos={departamentos} />
     </>
@@ -147,6 +150,7 @@ function EditarEmpleadoBtn({ empleado, onSuccess, empresaId, departamentos }: { 
 // ── Página principal ────────────────────────────────────────────
 export default function EmpleadosPage() {
   const router = useRouter();
+  const { t, i18n: i18nInstance } = useTranslation();
   const [data, setData] = useState<EmpleadoConDepartamento[]>([]);
   const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
   const [asistencia, setAsistencia] = useState<AsistenciaConEmpleado[]>([]);
@@ -171,7 +175,7 @@ export default function EmpleadosPage() {
       setError(null);
       
       const perfil = await obtenerPerfilActual();
-      if (!perfil) throw new Error("No se pudo obtener el perfil de usuario");
+      if (!perfil) throw new Error("Could not obtain user profile");
       setEmpresaId(perfil.empresa_id);
       
       const [empleados, deptos, asistencias] = await Promise.all([
@@ -183,7 +187,7 @@ export default function EmpleadosPage() {
       setDepartamentos(deptos);
       setAsistencia(asistencias);
     } catch (err) {
-      setError(err instanceof Error ? err : new ServiceError("UNKNOWN", "Error desconocido"));
+      setError(err instanceof Error ? err : new ServiceError("UNKNOWN", "Unknown error"));
     } finally {
       setLoading(false);
     }
@@ -209,7 +213,7 @@ export default function EmpleadosPage() {
     }
   };
 
-  const handleEliminar = async (id: string) => {
+  const handleEliminar = (id: string) => {
     setEmpleadoToDelete(id);
     setConfirmOpen(true);
   };
@@ -223,7 +227,7 @@ export default function EmpleadosPage() {
   };
 
   // ── Asistencia: Marcar ────────────────────────────────────────
-  const handleMarcarAsistencia = async (empleadoId: string, estado: EstadoAsistencia) => {
+  const handleMarcarAsistencia = (empleadoId: string, estado: EstadoAsistencia) => {
     setAsistenciaEditando((prev) => ({ ...prev, [empleadoId]: estado }));
   };
 
@@ -239,13 +243,13 @@ export default function EmpleadosPage() {
       setAsistenciaEditando({});
       cargarDatos();
     } catch (e: any) {
-      alert(`Error al guardar asistencia: ${e.message}`);
+      alert(`Error saving attendance: ${e.message}`);
     }
   };
 
   // ── Exportar Asistencia CSV ───────────────────────────────────
   const exportarAsistencia = () => {
-    if (asistencia.length === 0) return alert("No hay datos de asistencia para exportar");
+    if (asistencia.length === 0) return alert("No attendance data to export");
     const headers = ["empleado,email,fecha,estado,hora_entrada,hora_salida"];
     const rows = asistencia.map((a) =>
       `"${a.empleados?.nombre || ""}","${a.empleados?.email || ""}",${a.fecha},${a.estado},${a.hora_entrada || ""},${a.hora_salida || ""}`
@@ -269,7 +273,7 @@ export default function EmpleadosPage() {
     reader.onload = async (evt) => {
       const text = evt.target?.result as string;
       const lines = text.split("\n").filter((l) => l.trim());
-      if (lines.length < 2) return alert("El archivo debe tener encabezados y datos");
+      if (lines.length < 2) return alert("The file must have headers and data");
 
       const headers = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/['"]/g, ""));
       let count = 0;
@@ -292,11 +296,25 @@ export default function EmpleadosPage() {
           }
         }
       }
-      alert(`Asistencia importada: ${count} registros`);
+      alert(`Attendance imported: ${count} record(s)`);
       cargarDatos();
     };
     reader.readAsText(file);
     e.target.value = "";
+  };
+
+  const estadoLabel = (estado: string) => {
+    if (estado === "presente") return "Present";
+    if (estado === "ausente") return "Absent";
+    if (estado === "tarde") return "Late";
+    return "Leave";
+  };
+
+  const asistenciaBadgeClass = (estado: string) => {
+    if (estado === "presente") return "bg-green-100 text-green-700";
+    if (estado === "ausente") return "bg-red-100 text-red-700";
+    if (estado === "tarde") return "bg-yellow-100 text-yellow-700";
+    return "bg-blue-100 text-blue-700";
   };
 
   if (loading) return <Loading />;
@@ -305,12 +323,12 @@ export default function EmpleadosPage() {
   return (
     <div>
       <PageHeader
-        title="Empleados"
+        title={t("rrhh.empleados")}
         actions={
           <div className="flex items-center gap-2">
             <NuevoEmpleadoBtn onSuccess={cargarDatos} empresaId={empresaId} departamentos={departamentos} />
             <button onClick={() => router.push("/rrhh/departamentos")} className="inline-flex items-center gap-2 rounded-lg border border-blue-300 bg-white px-4 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-50">
-              Departamentos
+              {t("nav.departamentos")}
             </button>
           </div>
         }
@@ -321,7 +339,7 @@ export default function EmpleadosPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
         <input
           type="text"
-          placeholder="Buscar por nombre o departamento... (Enter para editar)"
+          placeholder="Search by name or department... (Enter to edit first)"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onKeyDown={handleSearchKeyDown}
@@ -330,15 +348,15 @@ export default function EmpleadosPage() {
         />
         {searchTerm && filteredEmpleados.length > 0 && (
           <p className="mt-1 text-xs text-gray-400">
-            {filteredEmpleados.length} resultado(s) — Presiona Enter para editar el primero
+            {filteredEmpleados.length} result(s) — Press Enter to edit the first
           </p>
         )}
       </div>
 
       {data.length === 0 ? (
         <EmptyState
-          title="No hay empleados registrados"
-          description="Crea tu primer empleado para comenzar a gestionar tu equipo."
+          title={t("rrhh.noEmployees")}
+          description="Create your first employee to start managing your team."
           action={<NuevoEmpleadoBtn onSuccess={cargarDatos} empresaId={empresaId} departamentos={departamentos} />}
         />
       ) : (
@@ -348,20 +366,20 @@ export default function EmpleadosPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Nombre</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Puesto</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Departamento</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Salario</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Estado</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Acciones</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.name")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.email")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("rrhh.position")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("rrhh.department")}</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">{t("rrhh.salary")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.status")}</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredEmpleados.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-400">
-                      No se encontraron empleados con "{searchTerm}"
+                      No employees found with "{searchTerm}"
                     </td>
                   </tr>
                 ) : (
@@ -370,11 +388,11 @@ export default function EmpleadosPage() {
                       <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{empleado.nombre}</td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{empleado.email}</td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{empleado.puesto}</td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{empleado.departamentos?.nombre || "—"}</td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{empleado.departamentos?.nombre || t("common.none")}</td>
                       <td className="whitespace-nowrap px-6 py-4 text-right text-sm text-gray-900">${empleado.salario.toLocaleString()}</td>
                       <td className="whitespace-nowrap px-6 py-4">
                         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${empleado.activo ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                          {empleado.activo ? "Activo" : "Inactivo"}
+                          {empleado.activo ? t("common.active") : t("common.inactive")}
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
@@ -399,7 +417,7 @@ export default function EmpleadosPage() {
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ClipboardCheck size={20} className="text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-800">Asistencia</h3>
+                <h3 className="text-lg font-semibold text-gray-800">{t("rrhh.asistencia")}</h3>
               </div>
               <div className="flex items-center gap-2">
                 <input
@@ -410,11 +428,11 @@ export default function EmpleadosPage() {
                 />
                 <button onClick={exportarAsistencia} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
                   <Download size={14} />
-                  Exportar
+                  Export
                 </button>
                 <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
                   <Upload size={14} />
-                  Importar
+                  Import
                   <input type="file" accept=".csv" onChange={importarAsistencia} className="hidden" />
                 </label>
               </div>
@@ -425,9 +443,9 @@ export default function EmpleadosPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Empleado</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Estado</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Última Asistencia</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.name")}</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.status")}</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Last Attendance</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -448,23 +466,18 @@ export default function EmpleadosPage() {
                             className="rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
                           >
                             <option value="">—</option>
-                            <option value="presente">Presente</option>
-                            <option value="ausente">Ausente</option>
-                            <option value="tarde">Tarde</option>
-                            <option value="permiso">Permiso</option>
+                            <option value="presente">Present</option>
+                            <option value="ausente">Absent</option>
+                            <option value="tarde">Late</option>
+                            <option value="permiso">Leave</option>
                           </select>
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-500">
                           {ultimaAsistencia ? (
-                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                              ultimaAsistencia.estado === "presente" ? "bg-green-100 text-green-700" :
-                              ultimaAsistencia.estado === "ausente" ? "bg-red-100 text-red-700" :
-                              ultimaAsistencia.estado === "tarde" ? "bg-yellow-100 text-yellow-700" :
-                              "bg-blue-100 text-blue-700"
-                            }`}>
-                              {ultimaAsistencia.estado} · {new Date(ultimaAsistencia.fecha).toLocaleDateString("es-DO")}
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${asistenciaBadgeClass(ultimaAsistencia.estado)}`}>
+                              {estadoLabel(ultimaAsistencia.estado)} · {new Date(ultimaAsistencia.fecha).toLocaleDateString(i18nInstance.language === "en" ? "en-US" : "es-DO")}
                             </span>
-                          ) : "Sin registro"}
+                          ) : t("common.noData")}
                         </td>
                       </tr>
                     );
@@ -480,7 +493,7 @@ export default function EmpleadosPage() {
                   className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
                 >
                   <ClipboardCheck size={16} />
-                  Guardar Asistencia ({Object.keys(asistenciaEditando).length} registro(s))
+                  Save Attendance ({Object.keys(asistenciaEditando).length} record(s))
                 </button>
               </div>
             )}
@@ -492,10 +505,10 @@ export default function EmpleadosPage() {
         isOpen={confirmOpen}
         onClose={() => { setConfirmOpen(false); setEmpleadoToDelete(null); }}
         onConfirm={confirmarEliminar}
-        title="Eliminar Empleado"
-        message="¿Estás seguro de eliminar este empleado? Esta acción no se puede deshacer."
-        confirmText="Eliminar"
-        cancelText="Cancelar"
+        title="Delete Employee"
+        message={t("common.confirmDelete")}
+        confirmText={t("common.delete")}
+        cancelText={t("common.cancel")}
         variant="danger"
       />
     </div>

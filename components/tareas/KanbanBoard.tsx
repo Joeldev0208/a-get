@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   DndContext,
   DragOverlay,
@@ -30,15 +31,23 @@ interface KanbanBoardProps {
   loading?: boolean;
 }
 
-const COLUMNAS: { id: ColumnaKanban; label: string; color: string }[] = [
-  { id: "pendientes", label: "Pendientes", color: "border-t-gray-400" },
-  { id: "en_progreso", label: "En Progreso", color: "border-t-blue-500" },
-  { id: "en_revision", label: "En Revisión", color: "border-t-yellow-500" },
-  { id: "completadas", label: "Completadas", color: "border-t-green-500" },
+const COLUMNAS: { id: ColumnaKanban; color: string }[] = [
+  { id: "pendientes", color: "border-t-gray-400" },
+  { id: "en_progreso", color: "border-t-blue-500" },
+  { id: "en_revision", color: "border-t-yellow-500" },
+  { id: "completadas", color: "border-t-green-500" },
 ];
 
 export default function KanbanBoard({ tareas, proyectoId, onMoverTarea, onNuevaTarea, onEditarTarea, onEliminarTarea, loading }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const { t, i18n: i18nInstance } = useTranslation();
+
+  const COLUMN_LABELS: Record<ColumnaKanban, string> = {
+    pendientes: t("tareas.pending"),
+    en_progreso: t("tareas.inProgress"),
+    en_revision: t("tareas.review"),
+    completadas: t("tareas.completed"),
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -89,7 +98,7 @@ export default function KanbanBoard({ tareas, proyectoId, onMoverTarea, onNuevaT
     return (
       <div className="flex h-full items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50">
         <div className="text-center">
-          <p className="text-sm text-gray-400">Selecciona un proyecto para ver su tablero Kanban</p>
+          <p className="text-sm text-gray-400">Select a project to view its Kanban board</p>
         </div>
       </div>
     );
@@ -98,13 +107,13 @@ export default function KanbanBoard({ tareas, proyectoId, onMoverTarea, onNuevaT
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700">Tablero Kanban</h3>
+        <h3 className="text-sm font-semibold text-gray-700">{t("tareas.kanban")}</h3>
         <button
           onClick={onNuevaTarea}
           className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
         >
           <Plus size={14} />
-          Nueva Tarea
+          {t("tareas.addTask")}
         </button>
       </div>
 
@@ -129,7 +138,7 @@ export default function KanbanBoard({ tareas, proyectoId, onMoverTarea, onNuevaT
                   className={`flex flex-col rounded-xl border border-gray-200 bg-gray-50 border-t-4 ${col.color}`}
                 >
                   <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200">
-                    <span className="text-xs font-semibold text-gray-700">{col.label}</span>
+                    <span className="text-xs font-semibold text-gray-700">{COLUMN_LABELS[col.id]}</span>
                     <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-medium text-gray-600">
                       {items.length}
                     </span>
@@ -141,7 +150,7 @@ export default function KanbanBoard({ tareas, proyectoId, onMoverTarea, onNuevaT
                     >
                       {items.length === 0 ? (
                         <div className="flex items-center justify-center py-8">
-                          <p className="text-[10px] text-gray-400">Sin tareas</p>
+                          <p className="text-[10px] text-gray-400">{t("tareas.noTasks")}</p>
                         </div>
                       ) : (
                         items.map((tarea) => (

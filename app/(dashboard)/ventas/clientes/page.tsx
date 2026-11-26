@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import PageHeader from "@/components/layout/PageHeader";
 import Loading from "@/components/ui/Loading";
 import EmptyState from "@/components/ui/EmptyState";
@@ -25,6 +26,7 @@ interface ClienteFormProps {
 }
 
 function ClienteForm({ isOpen, onClose, onSuccess, empresaId, cliente }: ClienteFormProps) {
+  const { t } = useTranslation();
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
@@ -47,7 +49,7 @@ function ClienteForm({ isOpen, onClose, onSuccess, empresaId, cliente }: Cliente
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nombre.trim()) { setError("El nombre es obligatorio"); return; }
+    if (!nombre.trim()) { setError(t("auth.nameRequired")); return; }
 
     try {
       setLoading(true);
@@ -74,24 +76,24 @@ function ClienteForm({ isOpen, onClose, onSuccess, empresaId, cliente }: Cliente
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || "Error al guardar cliente");
+      setError(err.message || "Error saving customer");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={esEdicion ? "Editar Cliente" : "Nuevo Cliente"} size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title={esEdicion ? "Edit Customer" : t("ventas.addClient")} size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <FormField label="Nombre" name="nombre" value={nombre} onChange={setNombre} required placeholder="Nombre completo o empresa" />
+        <FormField label={t("common.name")} name="nombre" value={nombre} onChange={setNombre} required placeholder="Full name or company" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label="Email" name="email" type="email" value={email} onChange={setEmail} placeholder="correo@ejemplo.com" />
-          <FormField label="Teléfono" name="telefono" value={telefono} onChange={setTelefono} placeholder="809-000-0000" />
-          <FormField label="RNC/Cédula" name="rncCedula" value={rncCedula} onChange={setRncCedula} placeholder="000-0000000-0" />
+          <FormField label={t("common.email")} name="email" type="email" value={email} onChange={setEmail} placeholder={t("auth.emailPlaceholder")} />
+          <FormField label={t("common.phone")} name="telefono" value={telefono} onChange={setTelefono} placeholder="809-000-0000" />
+          <FormField label="RNC/Cedula" name="rncCedula" value={rncCedula} onChange={setRncCedula} placeholder="000-0000000-0" />
         </div>
-        <FormField label="Dirección" name="direccion" type="textarea" value={direccion} onChange={setDireccion} placeholder="Dirección (opcional)" />
+        <FormField label={t("common.address")} name="direccion" type="textarea" value={direccion} onChange={setDireccion} placeholder="Address (optional)" />
         {error && <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</div>}
-        <SubmitButton loading={loading} text={esEdicion ? "Actualizar Cliente" : "Crear Cliente"} />
+        <SubmitButton loading={loading} text={esEdicion ? "Update Customer" : "Create Customer"} />
       </form>
     </Modal>
   );
@@ -99,12 +101,13 @@ function ClienteForm({ isOpen, onClose, onSuccess, empresaId, cliente }: Cliente
 
 // ── Botón wrapper ───────────────────────────────────────────────
 function NuevoClienteBtn({ onSuccess, empresaId }: { onSuccess: () => void; empresaId: string }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
       <button onClick={() => setIsOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700">
         <Plus size={16} />
-        Nuevo Cliente
+        {t("ventas.addClient")}
       </button>
       <ClienteForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} empresaId={empresaId} />
     </>
@@ -126,6 +129,7 @@ function EditarClienteBtn({ cliente, onSuccess, empresaId }: { cliente: Cliente;
 
 // ── Página principal ────────────────────────────────────────────
 export default function VentasClientesPage() {
+  const { t } = useTranslation();
   const [data, setData] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -141,12 +145,12 @@ export default function VentasClientesPage() {
       setLoading(true);
       setError(null);
       const perfil = await obtenerPerfilActual();
-      if (!perfil) throw new Error("No se pudo obtener el perfil de usuario");
+      if (!perfil) throw new Error("Could not obtain user profile");
       setEmpresaId(perfil.empresa_id);
       const clientes = await listarClientes(perfil.empresa_id);
       setData(clientes);
     } catch (err) {
-      setError(err instanceof Error ? err : new ServiceError("UNKNOWN", "Error desconocido"));
+      setError(err instanceof Error ? err : new ServiceError("UNKNOWN", "Unknown error"));
     } finally {
       setLoading(false);
     }
@@ -181,7 +185,7 @@ export default function VentasClientesPage() {
         await eliminarCliente(clienteToDelete, empresaId);
         cargarDatos();
       } catch (e: any) {
-        alert(`Error al eliminar: ${e.message}`);
+        alert(`Error deleting: ${e.message}`);
       }
       setClienteToDelete(null);
     }
@@ -192,14 +196,14 @@ export default function VentasClientesPage() {
 
   return (
     <div>
-      <PageHeader title="Clientes" actions={<NuevoClienteBtn onSuccess={cargarDatos} empresaId={empresaId} />} />
+      <PageHeader title={t("ventas.clientes")} actions={<NuevoClienteBtn onSuccess={cargarDatos} empresaId={empresaId} />} />
 
       {/* Buscador */}
       <div className="relative mb-6">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
         <input
           type="text"
-          placeholder="Buscar por nombre... (Enter para editar)"
+          placeholder="Search by name... (Enter to edit first)"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onKeyDown={handleSearchKeyDown}
@@ -208,15 +212,15 @@ export default function VentasClientesPage() {
         />
         {searchTerm && filteredData.length > 0 && (
           <p className="mt-1 text-xs text-gray-400">
-            {filteredData.length} resultado(s) — Presiona Enter para editar el primero
+            {filteredData.length} result(s) — Press Enter to edit the first
           </p>
         )}
       </div>
 
       {data.length === 0 ? (
         <EmptyState
-          title="No hay clientes registrados"
-          description="Agrega clientes para empezar a facturar."
+          title={t("ventas.noClients")}
+          description="Add customers to start invoicing."
           action={<NuevoClienteBtn onSuccess={cargarDatos} empresaId={empresaId} />}
         />
       ) : (
@@ -224,27 +228,27 @@ export default function VentasClientesPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Nombre</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Teléfono</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">RNC/Cédula</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.name")}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.email")}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.phone")}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">RNC/Cedula</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredData.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-400">
-                    No se encontraron clientes con "{searchTerm}"
+                    No customers found with "{searchTerm}"
                   </td>
                 </tr>
               ) : (
                 filteredData.map((cliente) => (
                   <tr key={cliente.id} className="hover:bg-gray-50">
                     <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{cliente.nombre}</td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{cliente.email || "—"}</td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{cliente.telefono || "—"}</td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{cliente.rnc_cedula || "—"}</td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{cliente.email || t("common.none")}</td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{cliente.telefono || t("common.none")}</td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{cliente.rnc_cedula || t("common.none")}</td>
                     <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
                       <EditarClienteBtn cliente={cliente} onSuccess={cargarDatos} empresaId={empresaId} />
                       <button
@@ -267,10 +271,10 @@ export default function VentasClientesPage() {
         isOpen={confirmOpen}
         onClose={() => { setConfirmOpen(false); setClienteToDelete(null); }}
         onConfirm={confirmarEliminar}
-        title="Eliminar Cliente"
-        message="¿Estás seguro de eliminar este cliente? Esta acción no se puede deshacer."
-        confirmText="Eliminar"
-        cancelText="Cancelar"
+        title="Delete Customer"
+        message={t("common.confirmDelete")}
+        confirmText={t("common.delete")}
+        cancelText={t("common.cancel")}
         variant="danger"
       />
     </div>

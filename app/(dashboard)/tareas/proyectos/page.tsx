@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import PageHeader from "@/components/layout/PageHeader";
 import Loading from "@/components/ui/Loading";
 import ErrorBox from "@/components/ui/ErrorBox";
@@ -32,6 +33,7 @@ interface ProyectoFormProps {
 }
 
 function ProyectoForm({ isOpen, onClose, onSuccess, empresaId, proyecto }: ProyectoFormProps) {
+  const { t } = useTranslation();
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [estado, setEstado] = useState("activo");
@@ -50,7 +52,7 @@ function ProyectoForm({ isOpen, onClose, onSuccess, empresaId, proyecto }: Proye
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nombre.trim()) { setError("El nombre es obligatorio"); return; }
+    if (!nombre.trim()) { setError("The name is required"); return; }
 
     try {
       setLoading(true);
@@ -72,38 +74,38 @@ function ProyectoForm({ isOpen, onClose, onSuccess, empresaId, proyecto }: Proye
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || "Error al guardar proyecto");
+      setError(err.message || "Error saving project");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={esEdicion ? "Editar Proyecto" : "Nuevo Proyecto"} size="sm">
+    <Modal isOpen={isOpen} onClose={onClose} title={esEdicion ? "Edit Project" : t("tareas.addProject")} size="sm">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <FormField label="Nombre *" name="nombre" value={nombre} onChange={setNombre} required placeholder="Nombre del proyecto" />
+        <FormField label={`${t("common.name")} *`} name="nombre" value={nombre} onChange={setNombre} required placeholder={t("tareas.projectName")} />
         <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-gray-700">Descripción</label>
+          <label className="block text-sm font-medium text-gray-700">{t("tareas.description")}</label>
           <textarea
             value={descripcion}
             onChange={(e) => setDescripcion(e.target.value)}
-            placeholder="Descripción opcional..."
+            placeholder="Optional description..."
             rows={3}
             className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
         {esEdicion && (
-          <FormField label="Estado" name="estado" type="select" value={estado} onChange={setEstado}
+          <FormField label={t("tareas.status")} name="estado" type="select" value={estado} onChange={setEstado}
             options={[
-              { value: "activo", label: "Activo" },
-              { value: "pausado", label: "Pausado" },
-              { value: "completado", label: "Completado" },
-              { value: "cancelado", label: "Cancelado" },
+              { value: "activo", label: t("common.active") },
+              { value: "pausado", label: "Paused" },
+              { value: "completado", label: "Completed" },
+              { value: "cancelado", label: "Canceled" },
             ]}
           />
         )}
         {error && <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</div>}
-        <SubmitButton loading={loading} text={esEdicion ? "Actualizar Proyecto" : "Crear Proyecto"} />
+        <SubmitButton loading={loading} text={esEdicion ? "Update Project" : "Create Project"} />
       </form>
     </Modal>
   );
@@ -121,6 +123,7 @@ interface TareaFormProps {
 }
 
 function TareaForm({ isOpen, onClose, onSuccess, empresaId, proyectoId, empleados, tarea }: TareaFormProps) {
+  const { t, i18n: i18nInstance } = useTranslation();
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [prioridad, setPrioridad] = useState("media");
@@ -154,7 +157,7 @@ function TareaForm({ isOpen, onClose, onSuccess, empresaId, proyectoId, empleado
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!titulo.trim()) { setError("El título es obligatorio"); return; }
+    if (!titulo.trim()) { setError("The title is required"); return; }
 
     try {
       setLoading(true);
@@ -183,7 +186,7 @@ function TareaForm({ isOpen, onClose, onSuccess, empresaId, proyectoId, empleado
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || "Error al guardar tarea");
+      setError(err.message || "Error saving task");
     } finally {
       setLoading(false);
     }
@@ -200,7 +203,7 @@ function TareaForm({ isOpen, onClose, onSuccess, empresaId, proyectoId, empleado
       const updated = await listarComentarios(tarea.id);
       setComentarios(updated);
     } catch (e: any) {
-      alert(`Error al agregar comentario: ${e.message}`);
+      alert(`Error adding comment: ${e.message}`);
     }
   };
 
@@ -209,36 +212,36 @@ function TareaForm({ isOpen, onClose, onSuccess, empresaId, proyectoId, empleado
     .map((e) => ({ value: e.id, label: e.nombre }));
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={esEdicion ? "Editar Tarea" : "Nueva Tarea"} size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title={esEdicion ? "Edit Task" : t("tareas.addTask")} size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <FormField label="Título *" name="titulo" value={titulo} onChange={setTitulo} required placeholder="Título de la tarea" />
-        <FormField label="Descripción" name="descripcion" value={descripcion} onChange={setDescripcion} placeholder="Descripción opcional" />
+        <FormField label={`${t("tareas.taskTitle")} *`} name="titulo" value={titulo} onChange={setTitulo} required placeholder={t("tareas.taskTitle")} />
+        <FormField label={t("tareas.description")} name="descripcion" value={descripcion} onChange={setDescripcion} placeholder="Optional description" />
         <div className="grid grid-cols-2 gap-4">
-          <FormField label="Prioridad" name="prioridad" type="select" value={prioridad} onChange={setPrioridad}
+          <FormField label={t("tareas.priority")} name="prioridad" type="select" value={prioridad} onChange={setPrioridad}
             options={[
-              { value: "baja", label: "Baja" },
-              { value: "media", label: "Media" },
-              { value: "alta", label: "Alta" },
-              { value: "urgente", label: "Urgente" },
+              { value: "baja", label: t("tareas.low") },
+              { value: "media", label: t("tareas.medium") },
+              { value: "alta", label: t("tareas.high") },
+              { value: "urgente", label: t("tareas.urgent") },
             ]}
           />
           {esEdicion && (
-            <FormField label="Columna" name="columna" type="select" value={columna} onChange={setColumna}
+            <FormField label={t("tareas.column")} name="columna" type="select" value={columna} onChange={setColumna}
               options={[
-                { value: "pendientes", label: "Pendientes" },
-                { value: "en_progreso", label: "En Progreso" },
-                { value: "en_revision", label: "En Revisión" },
-                { value: "completadas", label: "Completadas" },
+                { value: "pendientes", label: t("tareas.pending") },
+                { value: "en_progreso", label: t("tareas.inProgress") },
+                { value: "en_revision", label: t("tareas.review") },
+                { value: "completadas", label: t("tareas.completed") },
               ]}
             />
           )}
-          <FormField label="Asignado a" name="asignadoId" type="select" value={asignadoId} onChange={setAsignadoId}
-            options={[{ value: "", label: "Sin asignar" }, ...empOptions]}
+          <FormField label="Assigned to" name="asignadoId" type="select" value={asignadoId} onChange={setAsignadoId}
+            options={[{ value: "", label: "Unassigned" }, ...empOptions]}
           />
-          <FormField label="Fecha Límite" name="fechaLimite" type="date" value={fechaLimite} onChange={setFechaLimite} />
+          <FormField label="Due Date" name="fechaLimite" type="date" value={fechaLimite} onChange={setFechaLimite} />
         </div>
         {error && <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</div>}
-        <SubmitButton loading={loading} text={esEdicion ? "Actualizar Tarea" : "Crear Tarea"} />
+        <SubmitButton loading={loading} text={esEdicion ? "Update Task" : "Create Task"} />
       </form>
 
       {/* Sección de comentarios (solo en edición) */}
@@ -246,18 +249,18 @@ function TareaForm({ isOpen, onClose, onSuccess, empresaId, proyectoId, empleado
         <div className="mt-6 border-t border-gray-200 pt-4">
           <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
             <MessageSquare size={16} />
-            Comentarios ({comentarios.length})
+            Comments ({comentarios.length})
           </h4>
 
           <div className="mb-3 max-h-40 space-y-2 overflow-y-auto">
             {comentarios.length === 0 ? (
-              <p className="text-xs text-gray-400">Sin comentarios</p>
+              <p className="text-xs text-gray-400">No comments</p>
             ) : (
               comentarios.map((c) => (
                 <div key={c.id} className="rounded-lg bg-gray-50 p-2.5">
                   <p className="text-sm text-gray-700">{c.contenido}</p>
                   <p className="mt-1 text-[10px] text-gray-400">
-                    {new Date(c.created_at).toLocaleDateString("es-DO", {
+                    {new Date(c.created_at).toLocaleDateString(i18nInstance.language === "en" ? "en-US" : "es-DO", {
                       day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
                     })}
                   </p>
@@ -271,7 +274,7 @@ function TareaForm({ isOpen, onClose, onSuccess, empresaId, proyectoId, empleado
               type="text"
               value={nuevoComentario}
               onChange={(e) => setNuevoComentario(e.target.value)}
-              placeholder="Agregar comentario..."
+              placeholder="Add comment..."
               className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none"
               onKeyDown={(e) => e.key === "Enter" && handleAgregarComentario()}
             />
@@ -292,6 +295,7 @@ function TareaForm({ isOpen, onClose, onSuccess, empresaId, proyectoId, empleado
 
 // ── Página principal ────────────────────────────────────────────
 export default function ProyectosPage() {
+  const { t } = useTranslation();
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [tareas, setTareas] = useState<TareaConAsignado[]>([]);
   const [empleados, setEmpleados] = useState<Empleado[]>([]);
@@ -317,9 +321,9 @@ export default function ProyectosPage() {
     try {
       setLoading(true);
       setError(null);
-      
+       
       const perfil = await obtenerPerfilActual();
-      if (!perfil) throw new Error("No se pudo obtener el perfil de usuario");
+      if (!perfil) throw new Error("Could not get user profile");
       setEmpresaId(perfil.empresa_id);
       
       const [proys, emps] = await Promise.all([
@@ -333,7 +337,7 @@ export default function ProyectosPage() {
         setSelectedProyectoId(proys[0].id);
       }
     } catch (err) {
-      setError(err instanceof Error ? err : new ServiceError("UNKNOWN", "Error al cargar proyectos"));
+      setError(err instanceof Error ? err : new ServiceError("UNKNOWN", "Error loading projects"));
     } finally {
       setLoading(false);
     }
@@ -407,7 +411,7 @@ export default function ProyectosPage() {
 
   return (
     <div>
-      <PageHeader title="Proyectos y Tareas" />
+      <PageHeader title={t("tareas.proyectos")} />
 
       <div className="flex gap-6 h-[calc(100vh-160px)]">
         {/* Sidebar de proyectos (280px) */}
@@ -461,10 +465,10 @@ export default function ProyectosPage() {
         isOpen={confirmProyectoOpen}
         onClose={() => { setConfirmProyectoOpen(false); setDeleteProyectoId(null); }}
         onConfirm={confirmarEliminarProyecto}
-        title="Eliminar Proyecto"
-        message="¿Estás seguro? Se eliminarán todas las tareas y comentarios asociados."
-        confirmText="Eliminar"
-        cancelText="Cancelar"
+        title="Delete Project"
+        message="Are you sure? All associated tasks and comments will be deleted."
+        confirmText={t("common.delete")}
+        cancelText={t("common.cancel")}
         variant="danger"
       />
 
@@ -473,10 +477,10 @@ export default function ProyectosPage() {
         isOpen={confirmTareaOpen}
         onClose={() => { setConfirmTareaOpen(false); setDeleteTareaId(null); }}
         onConfirm={confirmarEliminarTarea}
-        title="Eliminar Tarea"
-        message="¿Estás seguro de eliminar esta tarea? Esta acción no se puede deshacer."
-        confirmText="Eliminar"
-        cancelText="Cancelar"
+        title="Delete Task"
+        message="Are you sure you want to delete this task? This action cannot be undone."
+        confirmText={t("common.delete")}
+        cancelText={t("common.cancel")}
         variant="danger"
       />
     </div>

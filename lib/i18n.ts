@@ -29,3 +29,9 @@ i18n.use(initReactI18next).init({
 });
 
 export { i18n };
+
+/**
+ * Synchronous translation helper for Server Components (no useTranslation).
+ * Resources are loaded at module init, so i18n.t resolves immediately.
+ */
+export const t = (key: string, options?: any): string => i18n.t(key, options) as string;

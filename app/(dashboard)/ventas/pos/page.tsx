@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import PageHeader from "@/components/layout/PageHeader";
 import Loading from "@/components/ui/Loading";
 import ErrorBox from "@/components/ui/ErrorBox";
@@ -26,14 +27,15 @@ function generarCodigoCarrito(): string {
 }
 
 // ── Imprimir ticket ────────────────────────────────────────────
-function imprimirTicket(factura: any, carritoItems: CarritoItem[]) {
+function imprimirTicket(factura: any, carritoItems: CarritoItem[], lang: string) {
   const printWindow = window.open("", "_blank", "width=320,height=600");
   if (!printWindow) {
-    alert("No se pudo abrir la ventana de impresión. Verifica los permisos del navegador.");
+    alert("Could not open the print window. Check browser permissions.");
     return;
   }
 
-  const fecha = new Date().toLocaleString("es-DO");
+  const isEn = lang === "en";
+  const fecha = new Date().toLocaleString(isEn ? "en-US" : "es-DO");
   const subtotal = carritoItems.reduce((s, i) => s + i.total, 0);
   const impuesto = subtotal * 0.18;
   const total = subtotal + impuesto;
@@ -43,7 +45,7 @@ function imprimirTicket(factura: any, carritoItems: CarritoItem[]) {
       (i) =>
         `<tr>
           <td style="text-align:left">${i.producto.codigo}</td>
-          <td style="text-align:left">${i.producto.nombre}</td>
+          <td style="text-align:left">${isEn ? i.producto.nombre : i.producto.nombre}</td>
           <td style="text-align:center">${i.cantidad}</td>
           <td style="text-align:right">$${i.total.toFixed(2)}</td>
         </tr>`
@@ -66,33 +68,33 @@ function imprimirTicket(factura: any, carritoItems: CarritoItem[]) {
         </style>
       </head>
       <body>
-        <h2>AGET - EMPRESA</h2>
-        <p class="center" style="margin:0;font-size:10px">Factura: ${factura?.numero || "N/A"}</p>
-        <p class="center" style="margin:0;font-size:10px">Fecha: ${fecha}</p>
+        <h2>${isEn ? "AGET - COMPANY" : "AGET - EMPRESA"}</h2>
+        <p class="center" style="margin:0;font-size:10px">${isEn ? "Invoice:" : "Factura:"} ${factura?.numero || "N/A"}</p>
+        <p class="center" style="margin:0;font-size:10px">${isEn ? "Date:" : "Fecha:"} ${fecha}</p>
         <hr/>
         <table>
           <tr>
-            <th>Código</th>
-            <th>Producto</th>
+            <th>${isEn ? "Code" : "Código"}</th>
+            <th>${isEn ? "Product" : "Producto"}</th>
             <th style="text-align:center">Qty</th>
             <th style="text-align:right">Total</th>
           </tr>
           ${itemsHtml}
           <tr class="total-row">
-            <td colspan="3" style="text-align:right">Subtotal:</td>
+            <td colspan="3" style="text-align:right">${isEn ? "Subtotal:" : "Subtotal:"}</td>
             <td style="text-align:right">$${subtotal.toFixed(2)}</td>
           </tr>
           <tr>
-            <td colspan="3" style="text-align:right">ITBIS (18%):</td>
+            <td colspan="3" style="text-align:right">${isEn ? "Tax (18%):" : "ITBIS (18%):"}</td>
             <td style="text-align:right">$${impuesto.toFixed(2)}</td>
           </tr>
           <tr class="total-row">
-            <td colspan="3" style="text-align:right">TOTAL:</td>
+            <td colspan="3" style="text-align:right">${isEn ? "TOTAL:" : "TOTAL:"}</td>
             <td style="text-align:right">$${total.toFixed(2)}</td>
           </tr>
         </table>
         <hr/>
-        <p class="gracias">¡Gracias por su compra!</p>
+        <p class="gracias">${isEn ? "Thank you for your purchase!" : "¡Gracias por su compra!"}</p>
         <script>window.print(); window.close();</script>
       </body>
     </html>
@@ -101,6 +103,7 @@ function imprimirTicket(factura: any, carritoItems: CarritoItem[]) {
 }
 
 export default function PosPage() {
+  const { t, i18n: i18nInstance } = useTranslation();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [search, setSearch] = useState("");
   const [carrito, setCarrito] = useState<CarritoItem[]>([]);
@@ -121,12 +124,12 @@ export default function PosPage() {
 
       const perfil = await obtenerPerfilActual();
       if (!perfil) {
-        setError("No se encontró un perfil de usuario. Inicia sesión nuevamente.");
+        setError("No user profile found. Sign in again.");
         return;
       }
 
       if (!perfil.empresa_id) {
-        setError("No tienes una empresa asignada.");
+        setError("You don't have a company assigned.");
         return;
       }
 
@@ -135,7 +138,7 @@ export default function PosPage() {
       setProductos(prods);
       setCodigoCarrito(generarCodigoCarrito());
     } catch (e: any) {
-      setError(e.message || "Error al cargar productos");
+      setError(e.message || "Error loading products");
     } finally {
       setLoading(false);
     }
@@ -150,13 +153,13 @@ export default function PosPage() {
   function addToCart(producto: Producto) {
     // Validar que el producto esté activo
     if (!producto.activo) {
-      alert("Este producto no está disponible");
+      alert("This product is not available");
       return;
     }
 
     // Validar stock disponible
     if (producto.stock <= 0) {
-      alert("Producto sin stock disponible");
+      alert("Product without stock available");
       return;
     }
 
@@ -165,7 +168,7 @@ export default function PosPage() {
     const cantidadEnCarrito = enCarrito ? enCarrito.cantidad : 0;
 
     if (cantidadEnCarrito >= producto.stock) {
-      alert(`Stock máximo disponible: ${producto.stock} unidades`);
+      alert(`Maximum stock available: ${producto.stock} units`);
       return;
     }
 
@@ -199,7 +202,7 @@ export default function PosPage() {
 
           // Validar stock máximo
           if (nuevaCantidad > item.producto.stock) {
-            alert(`Stock máximo disponible: ${item.producto.stock} unidades`);
+            alert(`Maximum stock available: ${item.producto.stock} units`);
             return item;
           }
 
@@ -226,16 +229,16 @@ export default function PosPage() {
 
   async function handleCheckout() {
     if (carrito.length === 0) {
-      alert("Agrega productos al carrito");
+      alert("Add products to cart");
       return;
     }
 
     if (!empresaId) {
-      alert("Error: No se ha cargado la empresa. Recarga la página.");
+      alert("Error: Company not loaded. Reload the page.");
       return;
     }
 
-    const confirmacion = confirm(`¿Confirmar venta por $${total.toFixed(2)}?`);
+    const confirmacion = confirm(`Confirm sale for $${total.toFixed(2)}?`);
     if (!confirmacion) return;
 
     try {
@@ -246,7 +249,7 @@ export default function PosPage() {
       // Obtener o crear cliente "Consumidor Final"
       const cliente = await obtenerClientePorDefecto(empresaId);
       if (!cliente) {
-        alert("Error al obtener cliente por defecto");
+        alert("Error getting default customer");
         return;
       }
 
@@ -265,15 +268,15 @@ export default function PosPage() {
       });
 
       // Imprimir ticket
-      imprimirTicket(factura, carrito);
+      imprimirTicket(factura, carrito, i18nInstance.language);
 
-      alert(`Factura #${factura.numero} creada exitosamente`);
+      alert(`Invoice #${factura.numero} created successfully`);
 
       // Reset carrito y generar nuevo código
       setCarrito([]);
       setCodigoCarrito(generarCodigoCarrito());
     } catch (e: any) {
-      alert(`Error al crear factura: ${e.message}`);
+      alert(`Error creating invoice: ${e.message}`);
     } finally {
       setCheckoutLoading(false);
     }
@@ -284,7 +287,7 @@ export default function PosPage() {
   if (error) {
     return (
       <div>
-        <PageHeader title="Punto de Venta" />
+        <PageHeader title={t("ventas.pos")} />
         <ErrorBox error={new Error(error)} onRetry={loadData} />
       </div>
     );
@@ -299,7 +302,7 @@ export default function PosPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
               className="w-full rounded-xl border border-gray-300 bg-white py-3 pl-10 pr-4 text-sm shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="Buscar producto por nombre o código..."
+              placeholder="Search product by name or code..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               autoFocus
@@ -311,17 +314,17 @@ export default function PosPage() {
           <table className="min-w-full divide-y divide-gray-200 text-sm">
             <thead className="bg-gray-50 sticky top-0">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Código</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Nombre</th>
-                <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Precio</th>
-                <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Stock</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("inventario.code")}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.name")}</th>
+                <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">{t("inventario.salePrice")}</th>
+                <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">{t("inventario.stock")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredProductos.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-4 py-12 text-center text-sm text-gray-400">
-                    No se encontraron productos
+                    No products found
                   </td>
                 </tr>
               ) : (
@@ -349,7 +352,7 @@ export default function PosPage() {
       <div className="w-96 flex flex-col bg-white rounded-xl shadow-sm border p-4">
         <div className="flex items-center gap-2 mb-4">
           <ShoppingCart size={20} />
-          <h3 className="font-semibold text-lg">Carrito</h3>
+          <h3 className="font-semibold text-lg">{t("ventas.cart")}</h3>
           <span className="text-sm text-gray-500 ml-auto">
             {carrito.length} items
           </span>
@@ -358,7 +361,7 @@ export default function PosPage() {
         {/* Código de carrito */}
         {codigoCarrito && (
           <div className="mb-3 rounded-lg bg-gray-50 px-3 py-2 text-center text-sm font-mono font-bold text-blue-700">
-            Código: {codigoCarrito}
+            {t("inventario.code")}: {codigoCarrito}
           </div>
         )}
 
@@ -372,7 +375,7 @@ export default function PosPage() {
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium truncate">{item.producto.nombre}</div>
                 <div className="text-xs text-gray-500">
-                  ${item.producto.precio_venta.toFixed(2)} c/u
+                  ${item.producto.precio_venta.toFixed(2)} each
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -405,7 +408,7 @@ export default function PosPage() {
           ))}
           {carrito.length === 0 && (
             <div className="text-center text-gray-400 py-8">
-              Carrito vacío. Selecciona productos.
+              Empty cart. Select products.
             </div>
           )}
         </div>
@@ -413,15 +416,15 @@ export default function PosPage() {
         {/* Totales */}
         <div className="border-t pt-3 space-y-1">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Subtotal</span>
+            <span className="text-gray-500">{t("ventas.subtotal")}</span>
             <span>${subtotal.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">ITBIS (18%)</span>
+            <span className="text-gray-500">{t("ventas.tax")} (18%)</span>
             <span>${impuesto.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-lg font-bold">
-            <span>Total</span>
+            <span>{t("common.total")}</span>
             <span className="text-blue-600">${total.toFixed(2)}</span>
           </div>
         </div>
@@ -431,7 +434,7 @@ export default function PosPage() {
           disabled={carrito.length === 0 || checkoutLoading}
           className="w-full mt-4 py-3 text-lg rounded-lg bg-blue-600 font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
-          {checkoutLoading ? "Procesando..." : `Cobrar $${total.toFixed(2)}`}
+          {checkoutLoading ? "Processing..." : `Charge $${total.toFixed(2)}`}
         </button>
       </div>
     </div>

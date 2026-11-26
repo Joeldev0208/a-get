@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   DndContext,
   DragEndEvent,
@@ -46,10 +47,10 @@ interface Columna {
 }
 
 const columnas: Columna[] = [
-  { id: "pendientes", titulo: "Pendientes", color: "border-t-gray-400" },
-  { id: "en_progreso", titulo: "En Progreso", color: "border-t-blue-500" },
-  { id: "en_revision", titulo: "En Revisión", color: "border-t-yellow-500" },
-  { id: "completadas", titulo: "Completadas", color: "border-t-green-500" },
+  { id: "pendientes", titulo: "pending", color: "border-t-gray-400" },
+  { id: "en_progreso", titulo: "inProgress", color: "border-t-blue-500" },
+  { id: "en_revision", titulo: "review", color: "border-t-yellow-500" },
+  { id: "completadas", titulo: "completed", color: "border-t-green-500" },
 ];
 
 const prioridadStyles: Record<string, string> = {
@@ -71,6 +72,7 @@ function ColumnaKanbanDroppable({
   onEdit: (tarea: TareaConAsignado) => void;
   onDelete: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   const { setNodeRef, isOver } = useDroppable({ id: columna.id });
 
   return (
@@ -82,7 +84,7 @@ function ColumnaKanbanDroppable({
     >
       <div className={`mb-3 rounded-t-xl border-t-4 ${columna.color} bg-white p-4 shadow-sm`}>
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-700">{columna.titulo}</h3>
+          <h3 className="text-sm font-semibold text-gray-700">{t(`tareas.${columna.titulo}`)}</h3>
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-xs font-medium text-gray-600">
             {tareas.length}
           </span>
@@ -156,7 +158,7 @@ function TareaCard({ tarea, onEdit, onDelete }: { tarea: TareaConAsignado; onEdi
                 prioridadStyles[tarea.prioridad]
               }`}
             >
-              {tarea.prioridad}
+              {t(`tareas.${tarea.prioridad}`)}
             </span>
           </div>
         </div>
@@ -176,9 +178,9 @@ function TareaCard({ tarea, onEdit, onDelete }: { tarea: TareaConAsignado; onEdi
         </div>
       </div>
       <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
-        <span>{tarea.empleados?.nombre || "Sin asignar"}</span>
+        <span>{tarea.empleados?.nombre || "Unassigned"}</span>
         {tarea.fecha_limite && (
-          <span>{new Date(tarea.fecha_limite).toLocaleDateString("es-DO")}</span>
+          <span>{new Date(tarea.fecha_limite).toLocaleDateString(i18nInstance.language === "en" ? "en-US" : "es-DO")}</span>
         )}
       </div>
     </div>
@@ -197,6 +199,7 @@ interface TareaFormProps {
 }
 
 function TareaForm({ isOpen, onClose, onSuccess, empresaId, proyectos, empleados, tarea }: TareaFormProps) {
+  const { t, i18n: i18nInstance } = useTranslation();
   const [proyectoId, setProyectoId] = useState("");
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
@@ -223,8 +226,8 @@ function TareaForm({ isOpen, onClose, onSuccess, empresaId, proyectos, empleados
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!proyectoId) { setError("Debes seleccionar un proyecto"); return; }
-    if (!titulo.trim()) { setError("El título es obligatorio"); return; }
+    if (!proyectoId) { setError("You must select a project"); return; }
+    if (!titulo.trim()) { setError("The title is required"); return; }
 
     const payload = {
       proyecto_id: proyectoId,
@@ -247,7 +250,7 @@ function TareaForm({ isOpen, onClose, onSuccess, empresaId, proyectos, empleados
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || "Error al guardar tarea");
+      setError(err.message || "Error saving task");
     } finally {
       setLoading(false);
     }
@@ -257,23 +260,23 @@ function TareaForm({ isOpen, onClose, onSuccess, empresaId, proyectos, empleados
   const empleadoOptions = empleados.map((e) => ({ value: e.id, label: e.nombre }));
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={esEdicion ? "Editar Tarea" : "Nueva Tarea"} size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title={esEdicion ? "Edit Task" : t("tareas.addTask")} size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <FormField label="Proyecto" name="proyectoId" type="select" value={proyectoId} onChange={setProyectoId} required options={proyectoOptions} />
-        <FormField label="Título" name="titulo" value={titulo} onChange={setTitulo} required placeholder="Título de la tarea" />
-        <FormField label="Descripción" name="descripcion" type="textarea" value={descripcion} onChange={setDescripcion} placeholder="Descripción (opcional)" />
+        <FormField label="Project" name="proyectoId" type="select" value={proyectoId} onChange={setProyectoId} required options={proyectoOptions} />
+        <FormField label={t("tareas.taskTitle")} name="titulo" value={titulo} onChange={setTitulo} required placeholder={t("tareas.taskTitle")} />
+        <FormField label={t("tareas.description")} name="descripcion" type="textarea" value={descripcion} onChange={setDescripcion} placeholder="Optional description" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label="Columna" name="columna" type="select" value={columna} onChange={setColumna}
-            options={[{ value: "pendientes", label: "Pendientes" }, { value: "en_progreso", label: "En Progreso" }, { value: "en_revision", label: "En Revisión" }, { value: "completadas", label: "Completadas" }]}
+          <FormField label={t("tareas.column")} name="columna" type="select" value={columna} onChange={setColumna}
+            options={[{ value: "pendientes", label: t("tareas.pending") }, { value: "en_progreso", label: t("tareas.inProgress") }, { value: "en_revision", label: t("tareas.review") }, { value: "completadas", label: t("tareas.completed") }]}
           />
-          <FormField label="Prioridad" name="prioridad" type="select" value={prioridad} onChange={setPrioridad}
-            options={[{ value: "baja", label: "Baja" }, { value: "media", label: "Media" }, { value: "alta", label: "Alta" }, { value: "urgente", label: "Urgente" }]}
+          <FormField label={t("tareas.priority")} name="prioridad" type="select" value={prioridad} onChange={setPrioridad}
+            options={[{ value: "baja", label: t("tareas.low") }, { value: "media", label: t("tareas.medium") }, { value: "alta", label: t("tareas.high") }, { value: "urgente", label: t("tareas.urgent") }]}
           />
-          <FormField label="Asignado a" name="asignadoId" type="select" value={asignadoId} onChange={setAsignadoId} options={empleadoOptions} />
-          <FormField label="Fecha Límite" name="fechaLimite" type="date" value={fechaLimite} onChange={setFechaLimite} />
+          <FormField label="Assigned to" name="asignadoId" type="select" value={asignadoId} onChange={setAsignadoId} options={empleadoOptions} />
+          <FormField label="Due Date" name="fechaLimite" type="date" value={fechaLimite} onChange={setFechaLimite} />
         </div>
         {error && <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</div>}
-        <SubmitButton loading={loading} text={esEdicion ? "Actualizar Tarea" : "Crear Tarea"} />
+        <SubmitButton loading={loading} text={esEdicion ? "Update Task" : "Create Task"} />
       </form>
     </Modal>
   );
@@ -281,12 +284,13 @@ function TareaForm({ isOpen, onClose, onSuccess, empresaId, proyectos, empleados
 
 // ── Botón wrapper: Nueva Tarea ──────────────────────────────────
 function NuevaTareaBtn({ onSuccess, proyectos, empleados, empresaId }: { onSuccess: () => void; proyectos: { id: string; nombre: string }[]; empleados: { id: string; nombre: string }[]; empresaId: string }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
       <button onClick={() => setIsOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700">
         <Plus size={16} />
-        Nueva Tarea
+        {t("tareas.addTask")}
       </button>
       <TareaForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} empresaId={empresaId} proyectos={proyectos} empleados={empleados} />
     </>
@@ -295,6 +299,7 @@ function NuevaTareaBtn({ onSuccess, proyectos, empleados, empresaId }: { onSucce
 
 // ── Página principal ────────────────────────────────────────────
 export default function TableroPage() {
+  const { t, i18n: i18nInstance } = useTranslation();
   const [columnData, setColumnData] = useState<Record<string, TareaConAsignado[]>>({
     pendientes: [],
     en_progreso: [],
@@ -319,7 +324,7 @@ export default function TableroPage() {
       setLoading(true);
       setError(null);
       const perfil = await obtenerPerfilActual();
-      if (!perfil) throw new Error("No se pudo obtener el perfil de usuario");
+      if (!perfil) throw new Error("Could not get user profile");
       setEmpresaId(perfil.empresa_id);
       const results = await Promise.all(columnas.map((col) => listarTareasPorColumna(perfil.empresa_id, col.id)));
       const nuevoEstado: Record<string, TareaConAsignado[]> = {};
@@ -331,7 +336,7 @@ export default function TableroPage() {
         setEmpleados(emps.map((e: any) => ({ id: e.id, nombre: e.nombre })));
       } catch {}
     } catch (err) {
-      setError(err instanceof Error ? err : new ServiceError("UNKNOWN", "Error desconocido"));
+      setError(err instanceof Error ? err : new ServiceError("UNKNOWN", "Unknown error"));
     } finally {
       setLoading(false);
     }
@@ -431,15 +436,15 @@ export default function TableroPage() {
   if (totalTareas === 0) {
     return (
       <div>
-        <PageHeader title="Tablero Kanban" actions={<NuevaTareaBtn onSuccess={handleNuevo} proyectos={proyectos} empleados={empleados} empresaId={empresaId} />} />
-        <EmptyState title="No hay tareas en el tablero" description="Crea tareas desde los proyectos." action={<NuevaTareaBtn onSuccess={handleNuevo} proyectos={proyectos} empleados={empleados} empresaId={empresaId} />} />
+        <PageHeader title={t("tareas.kanban")} actions={<NuevaTareaBtn onSuccess={handleNuevo} proyectos={proyectos} empleados={empleados} empresaId={empresaId} />} />
+        <EmptyState title={t("tareas.noTasks")} description="Create tasks from the projects." action={<NuevaTareaBtn onSuccess={handleNuevo} proyectos={proyectos} empleados={empleados} empresaId={empresaId} />} />
       </div>
     );
   }
 
   return (
     <div>
-      <PageHeader title="Tablero Kanban" actions={<NuevaTareaBtn onSuccess={handleNuevo} proyectos={proyectos} empleados={empleados} empresaId={empresaId} />} />
+      <PageHeader title={t("tareas.kanban")} actions={<NuevaTareaBtn onSuccess={handleNuevo} proyectos={proyectos} empleados={empleados} empresaId={empresaId} />} />
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}

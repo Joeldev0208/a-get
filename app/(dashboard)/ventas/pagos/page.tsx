@@ -1,5 +1,6 @@
 import PagosClient from "@/components/ventas/PagosClient";
 import { createClient } from "@/lib/supabase/server";
+import { t } from "@/lib/i18n";
 import type { PagoConFactura, Factura } from "@/lib/types/facturacion";
 
 export default async function VentasPagosPage() {
@@ -7,7 +8,7 @@ export default async function VentasPagosPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return <div className="p-8 text-center text-gray-500">No autenticado</div>;
+    return <div className="p-8 text-center text-gray-500">{t("inicio.notAuthenticated")}</div>;
   }
 
   const { data: perfil } = await supabase
@@ -18,7 +19,7 @@ export default async function VentasPagosPage() {
     .single();
 
   if (!perfil) {
-    return <div className="p-8 text-center text-gray-500">No se encontró perfil de usuario</div>;
+    return <div className="p-8 text-center text-gray-500">{t("inicio.noProfile")}</div>;
   }
 
   const [pagosRes, facturasRes] = await Promise.all([

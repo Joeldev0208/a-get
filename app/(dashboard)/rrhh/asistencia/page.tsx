@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import PageHeader from "@/components/layout/PageHeader";
 import Loading from "@/components/ui/Loading";
 import EmptyState from "@/components/ui/EmptyState";
@@ -14,7 +15,22 @@ import type { AsistenciaConEmpleado, EmpleadoConDepartamento } from "@/lib/types
 import { Download, Upload, Trash2 } from "lucide-react";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
+const estadoLabel = (estado: string) => {
+  if (estado === "presente") return "Present";
+  if (estado === "ausente") return "Absent";
+  if (estado === "tarde") return "Late";
+  return "Leave";
+};
+
+const estadoBadgeClass = (estado: string) => {
+  if (estado === "presente") return "bg-green-100 text-green-800";
+  if (estado === "ausente") return "bg-red-100 text-red-800";
+  if (estado === "tarde") return "bg-yellow-100 text-yellow-800";
+  return "bg-blue-100 text-blue-700";
+};
+
 export default function AsistenciaPage() {
+  const { t, i18n: i18nInstance } = useTranslation();
   const [data, setData] = useState<AsistenciaConEmpleado[]>([]);
   const [empleados, setEmpleados] = useState<EmpleadoConDepartamento[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +51,7 @@ export default function AsistenciaPage() {
       setError(null);
       
       const perfil = await obtenerPerfilActual();
-      if (!perfil) throw new Error("No se pudo obtener el perfil de usuario");
+      if (!perfil) throw new Error("Could not obtain user profile");
       setEmpresaId(perfil.empresa_id);
       
       const [asistencias, emps] = await Promise.all([
@@ -45,7 +61,7 @@ export default function AsistenciaPage() {
       setData(asistencias);
       setEmpleados(emps);
     } catch (err) {
-      setError(err instanceof Error ? err : new ServiceError("UNKNOWN", "Error desconocido"));
+      setError(err instanceof Error ? err : new ServiceError("UNKNOWN", "Unknown error"));
     } finally {
       setLoading(false);
     }
@@ -76,7 +92,7 @@ export default function AsistenciaPage() {
 
   // ── Exportar Asistencia CSV ───────────────────────────────────
   const exportarAsistencia = () => {
-    if (filteredAsistencia.length === 0) return alert("No hay datos para exportar");
+    if (filteredAsistencia.length === 0) return alert("No data to export");
     const headers = ["empleado,email,fecha,estado,hora_entrada,hora_salida"];
     const rows = filteredAsistencia.map((a) =>
       `"${a.empleados?.nombre || ""}","${a.empleados?.email || ""}",${a.fecha},${a.estado},${a.hora_entrada || ""},${a.hora_salida || ""}`
@@ -100,7 +116,7 @@ export default function AsistenciaPage() {
     reader.onload = async (evt) => {
       const text = evt.target?.result as string;
       const lines = text.split("\n").filter((l) => l.trim());
-      if (lines.length < 2) return alert("El archivo debe tener encabezados y datos");
+      if (lines.length < 2) return alert("The file must have headers and data");
 
       const headers = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/['"]/g, ""));
       let count = 0;
@@ -118,7 +134,7 @@ export default function AsistenciaPage() {
           }
         }
       }
-      alert(`Asistencia importada: ${count} registros (función en desarrollo)`);
+      alert(`Attendance imported: ${count} record(s) (feature in development)`);
       cargarDatos();
     };
     reader.readAsText(file);
@@ -131,16 +147,16 @@ export default function AsistenciaPage() {
   return (
     <div>
       <PageHeader
-        title="Asistencia"
+        title={t("rrhh.asistencia")}
         actions={
           <div className="flex items-center gap-2">
             <button onClick={exportarAsistencia} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
               <Download size={14} />
-              Exportar
+              Export
             </button>
             <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
               <Upload size={14} />
-              Importar
+              Import
               <input type="file" accept=".csv" onChange={importarAsistencia} className="hidden" />
             </label>
           </div>
@@ -150,7 +166,7 @@ export default function AsistenciaPage() {
       {/* Filtros */}
       <div className="mb-6 flex gap-4">
         <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t("common.date")}</label>
           <input
             type="date"
             value={fechaFiltro}
@@ -159,13 +175,13 @@ export default function AsistenciaPage() {
           />
         </div>
         <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Empleado</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t("rrhh.employeeName")}</label>
           <select
             value={empleadoFiltro}
             onChange={(e) => setEmpleadoFiltro(e.target.value)}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
           >
-            <option value="">Todos los empleados</option>
+            <option value="">All employees</option>
             {empleados.map((emp) => (
               <option key={emp.id} value={emp.id}>{emp.nombre}</option>
             ))}
@@ -175,50 +191,45 @@ export default function AsistenciaPage() {
 
       {filteredAsistencia.length === 0 ? (
         <EmptyState
-          title="No hay registros de asistencia"
-          description="No se encontraron registros con los filtros seleccionados."
+          title="No attendance records"
+          description="No records found with the selected filters."
         />
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Empleado</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Fecha</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Estado</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Entrada</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Salida</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("rrhh.employeeName")}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.email")}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.date")}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.status")}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Entry</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Exit</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredAsistencia.map((asist) => (
                 <tr key={asist.id} className="hover:bg-gray-50">
                   <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                    {asist.empleados?.nombre || "—"}
+                    {asist.empleados?.nombre || t("common.none")}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                    {asist.empleados?.email || "—"}
+                    {asist.empleados?.email || t("common.none")}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                    {new Date(asist.fecha).toLocaleDateString("es-DO")}
+                    {new Date(asist.fecha).toLocaleDateString(i18nInstance.language === "en" ? "en-US" : "es-DO")}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
-                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      asist.estado === "presente" ? "bg-green-100 text-green-800" :
-                      asist.estado === "ausente" ? "bg-red-100 text-red-800" :
-                      asist.estado === "tarde" ? "bg-yellow-100 text-yellow-800" :
-                      "bg-blue-100 text-blue-700"
-                    }`}>
-                      {asist.estado}
+                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${estadoBadgeClass(asist.estado)}`}>
+                      {estadoLabel(asist.estado)}
                     </span>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                    {asist.hora_entrada || "—"}
+                    {asist.hora_entrada || t("common.none")}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                    {asist.hora_salida || "—"}
+                    {asist.hora_salida || t("common.none")}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
                     <button
@@ -239,10 +250,10 @@ export default function AsistenciaPage() {
         isOpen={confirmOpen}
         onClose={() => { setConfirmOpen(false); setAsistenciaToDelete(null); }}
         onConfirm={confirmarEliminar}
-        title="Eliminar Registro"
-        message="¿Estás seguro de eliminar este registro de asistencia?"
-        confirmText="Eliminar"
-        cancelText="Cancelar"
+        title="Delete Record"
+        message={t("common.confirmDelete")}
+        confirmText={t("common.delete")}
+        cancelText={t("common.cancel")}
         variant="danger"
       />
     </div>

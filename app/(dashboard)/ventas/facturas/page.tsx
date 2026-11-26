@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import PageHeader from "@/components/layout/PageHeader";
 import Loading from "@/components/ui/Loading";
 import EmptyState from "@/components/ui/EmptyState";
@@ -25,13 +26,21 @@ const estadoStyles: Record<string, string> = {
   cancelada: "bg-gray-100 text-gray-800",
 };
 
+const estadoLabel = (estado: string) => {
+  if (estado === "pendiente") return "Pending";
+  if (estado === "pagada") return "Paid";
+  if (estado === "vencida") return "Overdue";
+  return "Cancelled";
+};
+
 const TASA_IMPUESTO = 0.18;
 
 // ── Imprimir ticket ────────────────────────────────────────────
-function imprimirFactura(factura: FacturaConCliente, detalles: DetalleFactura[]) {
+function imprimirFactura(factura: FacturaConCliente, detalles: DetalleFactura[], lang: string) {
   const printWindow = window.open("", "_blank", "width=320,height=600");
   if (!printWindow) return;
 
+  const isEn = lang === "en";
   const itemsHtml = detalles
     .map(
       (d) =>
@@ -61,20 +70,20 @@ function imprimirFactura(factura: FacturaConCliente, detalles: DetalleFactura[])
       </head>
       <body>
         <h2>AGET</h2>
-        <p class="center" style="margin:0;font-size:10px">Factura: ${factura.numero}</p>
-        <p class="center" style="margin:0;font-size:10px">Cliente: ${factura.clientes?.nombre || "—"}</p>
-        <p class="center" style="margin:0;font-size:10px">RNC: ${factura.clientes?.rnc_cedula || "—"}</p>
-        <p class="center" style="margin:0;font-size:10px">Emisión: ${new Date(factura.fecha_emision).toLocaleDateString("es-DO")}</p>
+        <p class="center" style="margin:0;font-size:10px">${isEn ? "Invoice:" : "Factura:"} ${factura.numero}</p>
+        <p class="center" style="margin:0;font-size:10px">${isEn ? "Customer:" : "Cliente:"} ${factura.clientes?.nombre || "—"}</p>
+        <p class="center" style="margin:0;font-size:10px">${isEn ? "RNC:" : "RNC:"} ${factura.clientes?.rnc_cedula || "—"}</p>
+        <p class="center" style="margin:0;font-size:10px">${isEn ? "Issue:" : "Emisión:"} ${new Date(factura.fecha_emision).toLocaleDateString(isEn ? "en-US" : "es-DO")}</p>
         <hr/>
         <table>
-          <tr><th>Producto</th><th style="text-align:center">Qty</th><th style="text-align:right">Precio</th><th style="text-align:right">Total</th></tr>
+          <tr><th>${isEn ? "Product" : "Producto"}</th><th style="text-align:center">Qty</th><th style="text-align:right">${isEn ? "Price" : "Precio"}</th><th style="text-align:right">Total</th></tr>
           ${itemsHtml}
           <tr class="total-row">
             <td colspan="3" style="text-align:right">Subtotal:</td>
             <td style="text-align:right">$${Number(factura.subtotal).toFixed(2)}</td>
           </tr>
           <tr>
-            <td colspan="3" style="text-align:right">ITBIS (${(TASA_IMPUESTO * 100).toFixed(0)}%):</td>
+            <td colspan="3" style="text-align:right">${isEn ? "Tax (18%):" : "ITBIS (18%):"}</td>
             <td style="text-align:right">$${Number(factura.impuesto).toFixed(2)}</td>
           </tr>
           <tr class="total-row">
@@ -83,7 +92,7 @@ function imprimirFactura(factura: FacturaConCliente, detalles: DetalleFactura[])
           </tr>
         </table>
         <hr/>
-        <p class="gracias">¡Gracias por su preferencia!</p>
+        <p class="gracias">${isEn ? "Thank you for your preference!" : "¡Gracias por su preferencia!"}</p>
         <script>window.print(); window.close();</script>
       </body>
     </html>
@@ -110,6 +119,7 @@ interface LineaDetalle {
 }
 
 function FacturaForm({ isOpen, onClose, onSuccess, clientes, factura, empresaId }: FacturaFormProps) {
+  const { t } = useTranslation();
   const [numero, setNumero] = useState("");
   const [clienteId, setClienteId] = useState("");
   const [fechaEmision, setFechaEmision] = useState("");
@@ -177,10 +187,10 @@ function FacturaForm({ isOpen, onClose, onSuccess, clientes, factura, empresaId 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!numero.trim()) { setError("El número de factura es obligatorio"); return; }
-    if (!clienteId) { setError("Debes seleccionar un cliente"); return; }
+    if (!numero.trim()) { setError("Invoice number is required"); return; }
+    if (!clienteId) { setError("You must select a customer"); return; }
     if (lineas.length === 0 || lineas.every((l) => !l.descripcion.trim())) {
-      setError("Debes agregar al menos un detalle con descripción");
+      setError("You must add at least one detail with description");
       return;
     }
 
@@ -240,7 +250,7 @@ function FacturaForm({ isOpen, onClose, onSuccess, clientes, factura, empresaId 
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || "Error al guardar factura");
+      setError(err.message || "Error saving invoice");
     } finally {
       setLoading(false);
     }
@@ -248,47 +258,47 @@ function FacturaForm({ isOpen, onClose, onSuccess, clientes, factura, empresaId 
 
   const clienteOptions = clientes.map((c) => ({ value: c.id, label: `${c.nombre}${c.rnc_cedula ? ` - ${c.rnc_cedula}` : ""}` }));
   const estadoOptions = [
-    { value: "pendiente", label: "Pendiente" },
-    { value: "pagada", label: "Pagada" },
-    { value: "vencida", label: "Vencida" },
-    { value: "cancelada", label: "Cancelada" },
+    { value: "pendiente", label: "Pending" },
+    { value: "pagada", label: "Paid" },
+    { value: "vencida", label: "Overdue" },
+    { value: "cancelada", label: "Cancelled" },
   ];
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={esEdicion ? `Editar Factura ${factura?.numero}` : "Nueva Factura"} size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={esEdicion ? `Edit Invoice ${factura?.numero}` : "New Invoice"} size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label="Número" name="numero" value={numero} onChange={setNumero} required placeholder="FAC-0001" />
-          <FormField label="Cliente" name="clienteId" type="select" value={clienteId} onChange={setClienteId} required options={clienteOptions} />
-          <FormField label="Fecha Emisión" name="fechaEmision" type="date" value={fechaEmision} onChange={setFechaEmision} required />
-          <FormField label="Fecha Vencimiento" name="fechaVencimiento" type="date" value={fechaVencimiento} onChange={setFechaVencimiento} required />
+          <FormField label={t("ventas.invoiceNumber")} name="numero" value={numero} onChange={setNumero} required placeholder="FAC-0001" />
+          <FormField label={t("ventas.client")} name="clienteId" type="select" value={clienteId} onChange={setClienteId} required options={clienteOptions} />
+          <FormField label="Issue Date" name="fechaEmision" type="date" value={fechaEmision} onChange={setFechaEmision} required />
+          <FormField label="Due Date" name="fechaVencimiento" type="date" value={fechaVencimiento} onChange={setFechaVencimiento} required />
           {esEdicion && (
-            <FormField label="Estado" name="estado" type="select" value={estado} onChange={setEstado} options={estadoOptions} />
+            <FormField label={t("common.status")} name="estado" type="select" value={estado} onChange={setEstado} options={estadoOptions} />
           )}
         </div>
 
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-sm font-medium text-gray-700">Detalles</label>
+            <label className="block text-sm font-medium text-gray-700">Details</label>
             <button type="button" onClick={agregarLinea} className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200">
-              <Plus size={14} /> Agregar línea
+              <Plus size={14} /> Add line
             </button>
           </div>
           <div className="space-y-2">
             {lineas.map((linea) => (
               <div key={linea.id} className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
                 <div className="flex-1">
-                  <input type="text" placeholder="Descripción" value={linea.descripcion}
+                  <input type="text" placeholder="Description" value={linea.descripcion}
                     onChange={(e) => actualizarLinea(linea.id, "descripcion", e.target.value)}
                     className="w-full rounded border border-gray-300 px-2.5 py-1.5 text-sm focus:border-blue-500 focus:outline-none" />
                 </div>
                 <div className="w-20">
-                  <input type="number" placeholder="Cant." value={linea.cantidad || ""}
+                  <input type="number" placeholder="Qty" value={linea.cantidad || ""}
                     onChange={(e) => actualizarLinea(linea.id, "cantidad", e.target.value ? Number(e.target.value) : 0)}
                     min={1} className="w-full rounded border border-gray-300 px-2.5 py-1.5 text-sm focus:border-blue-500 focus:outline-none" />
                 </div>
                 <div className="w-28">
-                  <input type="number" placeholder="Precio" value={linea.precio_unitario || ""}
+                  <input type="number" placeholder="Price" value={linea.precio_unitario || ""}
                     onChange={(e) => actualizarLinea(linea.id, "precio_unitario", e.target.value ? Number(e.target.value) : 0)}
                     min={0} step={0.01} className="w-full rounded border border-gray-300 px-2.5 py-1.5 text-sm focus:border-blue-500 focus:outline-none" />
                 </div>
@@ -306,18 +316,18 @@ function FacturaForm({ isOpen, onClose, onSuccess, clientes, factura, empresaId 
 
         <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
           <div className="flex justify-between text-sm text-gray-600">
-            <span>Subtotal:</span><span>${subtotal.toFixed(2)}</span>
+            <span>{t("ventas.subtotal")}:</span><span>${subtotal.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-sm text-gray-600">
-            <span>Impuesto ({(TASA_IMPUESTO * 100).toFixed(0)}%):</span><span>${impuesto.toFixed(2)}</span>
+            <span>{t("ventas.tax")} ({(TASA_IMPUESTO * 100).toFixed(0)}%):</span><span>${impuesto.toFixed(2)}</span>
           </div>
           <div className="mt-1 flex justify-between border-t border-gray-300 pt-2 text-base font-bold text-gray-900">
-            <span>Total:</span><span>${total.toFixed(2)}</span>
+            <span>{t("common.total")}:</span><span>${total.toFixed(2)}</span>
           </div>
         </div>
 
         {error && <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</div>}
-        <SubmitButton loading={loading} text={esEdicion ? "Actualizar Factura" : "Crear Factura"} />
+        <SubmitButton loading={loading} text={esEdicion ? "Update Invoice" : "Create Invoice"} />
       </form>
     </Modal>
   );
@@ -328,7 +338,8 @@ function NuevaFacturaBtn({ onSuccess, clientes, empresaId }: { onSuccess: () => 
   return (
     <>
       <button onClick={() => setIsOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700">
-        <Plus size={16} /> Nueva Factura
+        <Plus size={16} />
+        New Invoice
       </button>
       <FacturaForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} clientes={clientes} empresaId={empresaId} />
     </>
@@ -336,6 +347,7 @@ function NuevaFacturaBtn({ onSuccess, clientes, empresaId }: { onSuccess: () => 
 }
 
 export default function VentasFacturasPage() {
+  const { t, i18n: i18nInstance } = useTranslation();
   const [data, setData] = useState<FacturaConCliente[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
@@ -356,7 +368,7 @@ export default function VentasFacturasPage() {
       setLoading(true);
       setError(null);
       const perfil = await obtenerPerfilActual();
-      if (!perfil) throw new Error("No se pudo obtener el perfil de usuario");
+      if (!perfil) throw new Error("Could not obtain user profile");
       setEmpresaId(perfil.empresa_id);
       const [facturas, clts] = await Promise.all([
         listarFacturas(perfil.empresa_id),
@@ -365,7 +377,7 @@ export default function VentasFacturasPage() {
       setData(facturas);
       setClientes(clts);
     } catch (err) {
-      setError(err instanceof Error ? err : new ServiceError("UNKNOWN", "Error desconocido"));
+      setError(err instanceof Error ? err : new ServiceError("UNKNOWN", "Unknown error"));
     } finally {
       setLoading(false);
     }
@@ -385,7 +397,7 @@ export default function VentasFacturasPage() {
   // ── Reimprimir ──────────────────────────────────────────────
   const handleReimprimir = async (factura: FacturaConCliente) => {
     const detalles = await listarDetalles(factura.id);
-    imprimirFactura(factura, detalles);
+    imprimirFactura(factura, detalles, i18nInstance.language);
   };
 
   // ── Eliminar ────────────────────────────────────────────────
@@ -408,7 +420,7 @@ export default function VentasFacturasPage() {
   return (
     <div>
       <PageHeader
-        title="Facturas"
+        title={t("ventas.facturas")}
         actions={<NuevaFacturaBtn onSuccess={cargarDatos} clientes={clientes} empresaId={empresaId} />}
       />
 
@@ -417,7 +429,7 @@ export default function VentasFacturasPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
         <input
           type="text"
-          placeholder="Buscar por número de factura o nombre del cliente..."
+          placeholder="Search by invoice number or customer name..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full rounded-xl border border-gray-300 bg-white py-3 pl-10 pr-4 text-sm shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -427,8 +439,8 @@ export default function VentasFacturasPage() {
 
       {data.length === 0 ? (
         <EmptyState
-          title="No hay facturas registradas"
-          description="Crea tu primera factura para comenzar."
+          title="No invoices registered"
+          description="Create your first invoice to get started."
           action={<NuevaFacturaBtn onSuccess={cargarDatos} clientes={clientes} empresaId={empresaId} />}
         />
       ) : (
@@ -436,20 +448,20 @@ export default function VentasFacturasPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Número</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Cliente</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Emisión</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Vencimiento</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Total</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Estado</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("ventas.invoiceNumber")}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("ventas.client")}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Issue</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Due</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.total")}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.status")}</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">{t("common.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredData.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-400">
-                    No se encontraron facturas con "{searchTerm}"
+                    No invoices found with "{searchTerm}"
                   </td>
                 </tr>
               ) : (
@@ -457,26 +469,26 @@ export default function VentasFacturasPage() {
                   <tr key={factura.id} className="hover:bg-gray-50">
                     <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{factura.numero}</td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{factura.clientes?.nombre || "—"}</td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{new Date(factura.fecha_emision).toLocaleDateString("es-DO")}</td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{new Date(factura.fecha_vencimiento).toLocaleDateString("es-DO")}</td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{new Date(factura.fecha_emision).toLocaleDateString(i18nInstance.language === "en" ? "en-US" : "es-DO")}</td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{new Date(factura.fecha_vencimiento).toLocaleDateString(i18nInstance.language === "en" ? "en-US" : "es-DO")}</td>
                     <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-semibold text-gray-900">${factura.total.toLocaleString()}</td>
                     <td className="whitespace-nowrap px-6 py-4">
                       <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${estadoStyles[factura.estado]}`}>
-                        {factura.estado}
+                        {estadoLabel(factura.estado)}
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
                       <button
                         onClick={() => handleReimprimir(factura)}
                         className="mr-1 rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-green-600"
-                        title="Reimprimir ticket"
+                        title="Reprint ticket"
                       >
                         <Printer size={16} />
                       </button>
                       <button
                         onClick={() => { setEditFactura(factura); setEditModalOpen(true); }}
                         className="mr-1 rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-blue-600"
-                        title="Editar factura"
+                        title="Edit invoice"
                       >
                         <Pencil size={16} />
                       </button>
@@ -509,10 +521,10 @@ export default function VentasFacturasPage() {
         isOpen={confirmOpen}
         onClose={() => { setConfirmOpen(false); setFacturaToDelete(null); }}
         onConfirm={confirmarEliminar}
-        title="Eliminar Factura"
-        message="¿Estás seguro de eliminar esta factura? Esta acción no se puede deshacer."
-        confirmText="Eliminar"
-        cancelText="Cancelar"
+        title="Delete Invoice"
+        message={t("common.confirmDelete")}
+        confirmText={t("common.delete")}
+        cancelText={t("common.cancel")}
         variant="danger"
       />
     </div>
