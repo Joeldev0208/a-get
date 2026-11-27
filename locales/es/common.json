@@ -202,7 +202,20 @@
     "high": "Alta",
     "urgent": "Urgente",
     "noProjects": "No hay proyectos registrados",
-    "noTasks": "No hay tareas registradas"
+    "noTasks": "No hay tareas registradas",
+    "unassigned": "Sin asignar",
+    "editTask": "Editar tarea",
+    "project": "Proyecto",
+    "optionalDescription": "Descripción opcional",
+    "assignedTo": "Asignado a",
+    "dueDate": "Fecha límite",
+    "errorSelectProject": "Debes seleccionar un proyecto",
+    "errorTitleRequired": "El título es obligatorio",
+    "errorSaveTask": "Error al guardar la tarea",
+    "updateTask": "Actualizar tarea",
+    "createTask": "Crear tarea",
+    "emptyDescription": "Crea tareas desde los proyectos.",
+    "emptyDescriptionProject": "No se encontraron tareas para este proyecto."
   },
   "sesiones": {
     "title": "Sesiones",

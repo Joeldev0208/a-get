@@ -41,7 +41,7 @@ export default function DemoSeedButton({ empresaId: empresaIdProp }: DemoSeedBut
 
     if (!empresaId) {
       setStatus("error");
-      setMessage("No se encontró una empresa activa. Inicia sesión y selecciona una empresa primero.");
+      setMessage("No active company was found. Please log in and select a company first.");
       return;
     }
 
@@ -52,10 +52,10 @@ export default function DemoSeedButton({ empresaId: empresaIdProp }: DemoSeedBut
     try {
       await seedDemoData(empresaId);
       setStatus("success");
-      setMessage("Datos de demostración cargados correctamente.");
+      setMessage("Demonstration data successfully loaded.");
     } catch {
       setStatus("error");
-      setMessage("No se pudieron cargar los datos de demostración. Inténtalo de nuevo.");
+      setMessage("The demo data could not be loaded. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -79,7 +79,7 @@ export default function DemoSeedButton({ empresaId: empresaIdProp }: DemoSeedBut
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <SubmitButton
           loading={loading}
-          text={empresaId ? "Cargar datos de demo" : "Cargando empresa..."}
+          text={empresaId ? "Load demo data" : "Loading company..."}
           disabled={!empresaId}
         />
         {loading && <Loading />}

@@ -202,7 +202,20 @@
     "high": "High",
     "urgent": "Urgent",
     "noProjects": "No projects registered",
-    "noTasks": "No tasks registered"
+    "noTasks": "No tasks registered",
+    "unassigned": "Unassigned",
+    "editTask": "Edit Task",
+    "project": "Project",
+    "optionalDescription": "Optional description",
+    "assignedTo": "Assigned to",
+    "dueDate": "Due Date",
+    "errorSelectProject": "You must select a project",
+    "errorTitleRequired": "The title is required",
+    "errorSaveTask": "Error saving task",
+    "updateTask": "Update Task",
+    "createTask": "Create Task",
+    "emptyDescription": "Create tasks from the projects.",
+    "emptyDescriptionProject": "No tasks found for this project."
   },
   "sesiones": {
     "title": "Sessions",

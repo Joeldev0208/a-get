@@ -2,322 +2,39 @@
 
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  DndContext,
-  DragEndEvent,
-  DragOverlay,
-  DragStartEvent,
-  PointerSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  closestCorners,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  useSortable,
-} from "@dnd-kit/sortable";
-import { useDroppable } from "@dnd-kit/core";
-import PageHeader from "@/components/layout/PageHeader";
-import Loading from "@/components/ui/Loading";
-import EmptyState from "@/components/ui/EmptyState";
-import ErrorBox from "@/components/ui/ErrorBox";
-import Modal from "@/components/ui/Modal";
-import FormField from "@/components/ui/FormField";
-import SubmitButton from "@/components/ui/SubmitButton";
+import { obtenerPerfilActual } from "@/lib/services/empresa";
 import {
   listarTareasPorColumna,
-  crearTarea,
-  actualizarTarea,
-  moverTarea,
-  eliminarTarea,
   listarProyectos,
+  crearTarea,
 } from "@/lib/services/tareas.service";
-import { listarEmpleados } from "@/lib/services/rrhh.service";
-import { obtenerPerfilActual } from "@/lib/services/empresa";
+import { listarEmpleados as listarRrhhEmpleados } from "@/lib/services/rrhh.service";
 import { ServiceError } from "@/lib/services/supabase-service";
-import type { TareaConAsignado, ColumnaKanban, Tarea } from "@/lib/types/tareas";
-import { Plus, Pencil, Trash2, FolderOpen, GripVertical } from "lucide-react";
+import type { TareaConAsignado, TareaInput } from "@/lib/types/tareas";
+import { KanbanBoard, KanbanColumnaConfig } from "@/components/kanban";
 
-interface Columna {
-  id: ColumnaKanban;
-  titulo: string;
-  color: string;
-}
+/* =========================
+   CONFIGURACIÓN DE COLUMNAS
+   ========================= */
 
-const columnas: Columna[] = [
-  { id: "pendientes", titulo: "pending", color: "border-t-gray-400" },
-  { id: "en_progreso", titulo: "inProgress", color: "border-t-blue-500" },
-  { id: "en_revision", titulo: "review", color: "border-t-yellow-500" },
-  { id: "completadas", titulo: "completed", color: "border-t-green-500" },
+const COLUMNAS: KanbanColumnaConfig[] = [
+  { id: "pendientes", tituloKey: "pending", color: "border-t-gray-400" },
+  { id: "en_progreso", tituloKey: "inProgress", color: "border-t-blue-500" },
+  { id: "en_revision", tituloKey: "review", color: "border-t-yellow-500" },
+  { id: "completadas", tituloKey: "completed", color: "border-t-green-500" },
 ];
 
-const prioridadStyles: Record<string, string> = {
-  baja: "bg-gray-100 text-gray-600",
-  media: "bg-blue-100 text-blue-700",
-  alta: "bg-orange-100 text-orange-700",
-  urgente: "bg-red-100 text-red-700",
-};
+/* =========================
+   PÁGINA DEL TABLERO KANBAN
+   ========================= */
 
-// ── Columna Droppable ───────────────────────────────────────────
-function ColumnaKanbanDroppable({
-  columna,
-  tareas,
-  onEdit,
-  onDelete,
-}: {
-  columna: Columna;
-  tareas: TareaConAsignado[];
-  onEdit: (tarea: TareaConAsignado) => void;
-  onDelete: (id: string) => void;
-}) {
-  const { t } = useTranslation();
-  const { setNodeRef, isOver } = useDroppable({ id: columna.id });
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={`flex flex-col rounded-xl transition-colors ${
-        isOver ? "bg-blue-50" : ""
-      }`}
-    >
-      <div className={`mb-3 rounded-t-xl border-t-4 ${columna.color} bg-white p-4 shadow-sm`}>
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-700">{t(`tareas.${columna.titulo}`)}</h3>
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-xs font-medium text-gray-600">
-            {tareas.length}
-          </span>
-        </div>
-      </div>
-      <SortableContext
-        items={tareas.map((t) => t.id)}
-        strategy={verticalListSortingStrategy}
-      >
-        <div className="flex flex-col gap-3 p-2">
-          {tareas.map((tarea) => (
-            <TareaCard key={tarea.id} tarea={tarea} onEdit={() => onEdit(tarea)} onDelete={() => onDelete(tarea.id)} />
-          ))}
-        </div>
-      </SortableContext>
-    </div>
-  );
-}
-
-// ── Tarjeta de tarea (draggable) ────────────────────────────────
-function TareaCard({ tarea, onEdit, onDelete }: { tarea: TareaConAsignado; onEdit: () => void; onDelete: () => void }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: tarea.id });
-
-  const style: React.CSSProperties = {
-    transform: transform
-      ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
-      : undefined,
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 50 : undefined,
-    position: isDragging ? "relative" : undefined,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
-    >
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <button
-              {...attributes}
-              {...listeners}
-              className="cursor-grab rounded p-0.5 text-gray-400 hover:text-gray-600 active:cursor-grabbing"
-            >
-              <GripVertical size={14} />
-            </button>
-            <h4 className="text-sm font-medium text-gray-900">{tarea.titulo}</h4>
-          </div>
-          {tarea.descripcion && (
-            <p className="mt-1 text-xs text-gray-500 line-clamp-2">{tarea.descripcion}</p>
-          )}
-          <div className="mt-3 flex items-center gap-2">
-            {tarea.proyectos?.nombre && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
-                <FolderOpen size={12} />
-                {tarea.proyectos.nombre}
-              </span>
-            )}
-            <span
-              className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                prioridadStyles[tarea.prioridad]
-              }`}
-            >
-              {t(`tareas.${tarea.prioridad}`)}
-            </span>
-          </div>
-        </div>
-        <div className="ml-2 flex gap-1">
-          <button
-            onClick={onEdit}
-            className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-blue-600"
-          >
-            <Pencil size={14} />
-          </button>
-          <button
-            onClick={onDelete}
-            className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-600"
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
-      </div>
-      <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
-        <span>{tarea.empleados?.nombre || "Unassigned"}</span>
-        {tarea.fecha_limite && (
-          <span>{new Date(tarea.fecha_limite).toLocaleDateString(i18nInstance.language === "en" ? "en-US" : "es-DO")}</span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Formulario de Tarea (Crear / Editar) ────────────────────────
-interface TareaFormProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-  empresaId: string;
-  proyectos: { id: string; nombre: string }[];
-  empleados: { id: string; nombre: string }[];
-  tarea?: TareaConAsignado | null;
-}
-
-function TareaForm({ isOpen, onClose, onSuccess, empresaId, proyectos, empleados, tarea }: TareaFormProps) {
-  const { t, i18n: i18nInstance } = useTranslation();
-  const [proyectoId, setProyectoId] = useState("");
-  const [titulo, setTitulo] = useState("");
-  const [descripcion, setDescripcion] = useState("");
-  const [columna, setColumna] = useState("pendientes");
-  const [prioridad, setPrioridad] = useState("media");
-  const [asignadoId, setAsignadoId] = useState("");
-  const [fechaLimite, setFechaLimite] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const esEdicion = !!tarea;
-
-  useEffect(() => {
-    if (isOpen) {
-      setProyectoId(tarea?.proyecto_id || "");
-      setTitulo(tarea?.titulo || "");
-      setDescripcion(tarea?.descripcion || "");
-      setColumna(tarea?.columna || "pendientes");
-      setPrioridad(tarea?.prioridad || "media");
-      setAsignadoId(tarea?.asignado_id || "");
-      setFechaLimite(tarea?.fecha_limite || "");
-      setError(null);
-    }
-  }, [isOpen, tarea]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!proyectoId) { setError("You must select a project"); return; }
-    if (!titulo.trim()) { setError("The title is required"); return; }
-
-    const payload = {
-      proyecto_id: proyectoId,
-      titulo: titulo.trim(),
-      descripcion: descripcion.trim() || null,
-      columna: columna as any,
-      prioridad: prioridad as any,
-      asignado_id: asignadoId || null,
-      fecha_limite: fechaLimite || null,
-    };
-
-    try {
-      setLoading(true);
-      setError(null);
-      if (esEdicion) {
-        await actualizarTarea(tarea!.id, empresaId, payload);
-      } else {
-        await crearTarea(empresaId, payload);
-      }
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      setError(err.message || "Error saving task");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const proyectoOptions = proyectos.map((p) => ({ value: p.id, label: p.nombre }));
-  const empleadoOptions = empleados.map((e) => ({ value: e.id, label: e.nombre }));
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title={esEdicion ? "Edit Task" : t("tareas.addTask")} size="md">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <FormField label="Project" name="proyectoId" type="select" value={proyectoId} onChange={setProyectoId} required options={proyectoOptions} />
-        <FormField label={t("tareas.taskTitle")} name="titulo" value={titulo} onChange={setTitulo} required placeholder={t("tareas.taskTitle")} />
-        <FormField label={t("tareas.description")} name="descripcion" type="textarea" value={descripcion} onChange={setDescripcion} placeholder="Optional description" />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label={t("tareas.column")} name="columna" type="select" value={columna} onChange={setColumna}
-            options={[{ value: "pendientes", label: t("tareas.pending") }, { value: "en_progreso", label: t("tareas.inProgress") }, { value: "en_revision", label: t("tareas.review") }, { value: "completadas", label: t("tareas.completed") }]}
-          />
-          <FormField label={t("tareas.priority")} name="prioridad" type="select" value={prioridad} onChange={setPrioridad}
-            options={[{ value: "baja", label: t("tareas.low") }, { value: "media", label: t("tareas.medium") }, { value: "alta", label: t("tareas.high") }, { value: "urgente", label: t("tareas.urgent") }]}
-          />
-          <FormField label="Assigned to" name="asignadoId" type="select" value={asignadoId} onChange={setAsignadoId} options={empleadoOptions} />
-          <FormField label="Due Date" name="fechaLimite" type="date" value={fechaLimite} onChange={setFechaLimite} />
-        </div>
-        {error && <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</div>}
-        <SubmitButton loading={loading} text={esEdicion ? "Update Task" : "Create Task"} />
-      </form>
-    </Modal>
-  );
-}
-
-// ── Botón wrapper: Nueva Tarea ──────────────────────────────────
-function NuevaTareaBtn({ onSuccess, proyectos, empleados, empresaId }: { onSuccess: () => void; proyectos: { id: string; nombre: string }[]; empleados: { id: string; nombre: string }[]; empresaId: string }) {
-  const { t } = useTranslation();
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <>
-      <button onClick={() => setIsOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700">
-        <Plus size={16} />
-        {t("tareas.addTask")}
-      </button>
-      <TareaForm isOpen={isOpen} onClose={() => setIsOpen(false)} onSuccess={onSuccess} empresaId={empresaId} proyectos={proyectos} empleados={empleados} />
-    </>
-  );
-}
-
-// ── Página principal ────────────────────────────────────────────
 export default function TableroPage() {
   const { t, i18n: i18nInstance } = useTranslation();
-  const [columnData, setColumnData] = useState<Record<string, TareaConAsignado[]>>({
-    pendientes: [],
-    en_progreso: [],
-    en_revision: [],
-    completadas: [],
-  });
   const [proyectos, setProyectos] = useState<{ id: string; nombre: string }[]>([]);
   const [empleados, setEmpleados] = useState<{ id: string; nombre: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [editingTarea, setEditingTarea] = useState<TareaConAsignado | null>(null);
   const [empresaId, setEmpresaId] = useState<string>("");
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor)
-  );
 
   const cargarDatos = async () => {
     try {
@@ -325,16 +42,15 @@ export default function TableroPage() {
       setError(null);
       const perfil = await obtenerPerfilActual();
       if (!perfil) throw new Error("Could not get user profile");
+      if (!perfil.empresa_id) throw new Error("User has no company assigned");
       setEmpresaId(perfil.empresa_id);
-      const results = await Promise.all(columnas.map((col) => listarTareasPorColumna(perfil.empresa_id, col.id)));
-      const nuevoEstado: Record<string, TareaConAsignado[]> = {};
-      columnas.forEach((col, index) => { nuevoEstado[col.id] = results[index]; });
-      setColumnData(nuevoEstado);
-      try {
-        const [proys, emps] = await Promise.all([listarProyectos(perfil.empresa_id), listarEmpleados(perfil.empresa_id)]);
-        setProyectos(proys.map((p: any) => ({ id: p.id, nombre: p.nombre })));
-        setEmpleados(emps.map((e: any) => ({ id: e.id, nombre: e.nombre })));
-      } catch {}
+
+      const [proys, emps] = await Promise.all([
+        listarProyectos(perfil.empresa_id),
+        listarRrhhEmpleados(perfil.empresa_id),
+      ]);
+      setProyectos(proys.map((p: any) => ({ id: p.id, nombre: p.nombre })));
+      setEmpleados(emps.map((e: any) => ({ id: e.id, nombre: e.nombre })));
     } catch (err) {
       setError(err instanceof Error ? err : new ServiceError("UNKNOWN", "Unknown error"));
     } finally {
@@ -342,160 +58,76 @@ export default function TableroPage() {
     }
   };
 
-  useEffect(() => { cargarDatos(); }, []);
+  useEffect(() => {
+    cargarDatos();
+  }, []);
 
-  if (loading) return <Loading />;
-  if (error) return <ErrorBox error={error} onRetry={cargarDatos} />;
+  if (loading) return null;
+  if (error) return <ServiceErrorBox error={error} onRetry={cargarDatos} />;
+  if (!empresaId) return null;
 
-  const handleNuevo = () => cargarDatos();
+  /* ── Callbacks del Kanban ── */
 
-  const findTarea = (id: string): TareaConAsignado | undefined => {
-    for (const col of columnas) {
-      const found = columnData[col.id].find((t) => t.id === id);
-      if (found) return found;
-    }
-    return undefined;
+  const cargarTareas = async (columnaId: string): Promise<TareaConAsignado[]> => {
+    return listarTareasPorColumna(empresaId, columnaId);
   };
 
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
+  const onCrearTarea = async (payload: Record<string, any>) => {
+    await crearTarea(empresaId, payload as TareaInput);
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveId(null);
-
-    if (!over) return;
-
-    const activeId = active.id as string;
-    const overId = over.id as string;
-
-    // Buscar la tarea arrastrada
-    const tarea = findTarea(activeId);
-    if (!tarea) return;
-
-    // Determinar columna destino
-    let nuevaColumna: ColumnaKanban | undefined;
-
-    // Verificar si se soltó sobre una columna
-    const columnaDestino = columnas.find((col) => col.id === overId);
-    if (columnaDestino) {
-      nuevaColumna = columnaDestino.id;
-    } else {
-      // Verificar si se soltó sobre otra tarea
-      for (const col of columnas) {
-        if (columnData[col.id].some((t) => t.id === overId)) {
-          nuevaColumna = col.id;
-          break;
-        }
-      }
-    }
-
-    if (!nuevaColumna || nuevaColumna === tarea.columna) return;
-
-    // Actualizar UI optimistamente
-    setColumnData((prev) => {
-      const sourceCol = tarea.columna;
-      const sourceTasks = prev[sourceCol].filter((t) => t.id !== activeId);
-      const targetTasks = [...prev[nuevaColumna!], { ...tarea, columna: nuevaColumna! }];
-      return {
-        ...prev,
-        [sourceCol]: sourceTasks,
-        [nuevaColumna!]: targetTasks,
-      };
-    });
-
-    // Persistir en Supabase
-    try {
-      await moverTarea(activeId, empresaId, nuevaColumna, 0);
-    } catch (err) {
-      console.error("Error al mover tarea:", err);
-      cargarDatos(); // Rollback
-    }
+  const onActualizarTarea = async (id: string, payload: Record<string, any>) => {
+    const { actualizarTarea } = await import("@/lib/services/tareas.service");
+    await actualizarTarea(id, empresaId, payload);
   };
 
-  const handleEdit = (tarea: TareaConAsignado) => {
-    setEditingTarea(tarea);
+  const onMoverTarea = async (id: string, columna: string, orden: number) => {
+    const { moverTarea } = await import("@/lib/services/tareas.service");
+    await moverTarea(id, empresaId, columna, orden);
   };
 
-  const handleCloseEdit = () => {
-    setEditingTarea(null);
+  const onEliminarTarea = async (id: string) => {
+    const { eliminarTarea } = await import("@/lib/services/tareas.service");
+    await eliminarTarea(id, empresaId);
   };
 
-  const handleEliminar = async (id: string) => {
-    try {
-      await eliminarTarea(id, empresaId);
-      cargarDatos();
-    } catch (err) {
-      console.error("Error al eliminar tarea:", err);
-    }
+  const onChange = () => {
+    // Se puede usar para refrescar datos externos si es necesario
   };
-
-  const totalTareas = Object.values(columnData).reduce((sum, arr) => sum + arr.length, 0);
-
-  if (totalTareas === 0) {
-    return (
-      <div>
-        <PageHeader title={t("tareas.kanban")} actions={<NuevaTareaBtn onSuccess={handleNuevo} proyectos={proyectos} empleados={empleados} empresaId={empresaId} />} />
-        <EmptyState title={t("tareas.noTasks")} description="Create tasks from the projects." action={<NuevaTareaBtn onSuccess={handleNuevo} proyectos={proyectos} empleados={empleados} empresaId={empresaId} />} />
-      </div>
-    );
-  }
 
   return (
-    <div>
-      <PageHeader title={t("tareas.kanban")} actions={<NuevaTareaBtn onSuccess={handleNuevo} proyectos={proyectos} empleados={empleados} empresaId={empresaId} />} />
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-          {columnas.map((columna) => (
-            <ColumnaKanbanDroppable
-              key={columna.id}
-              columna={columna}
-              tareas={columnData[columna.id]}
-              onEdit={handleEdit}
-              onDelete={handleEliminar}
-            />
-          ))}
-        </div>
-        <DragOverlay>
-          {activeId ? (() => {
-            const tarea = findTarea(activeId);
-            if (!tarea) return null;
-            return (
-              <div className="rounded-lg border border-blue-300 bg-white p-4 shadow-lg opacity-80">
-                <div className="flex items-center gap-2">
-                  <GripVertical size={14} className="text-gray-400" />
-                  <h4 className="text-sm font-medium text-gray-900">{tarea.titulo}</h4>
-                </div>
-                {tarea.proyectos?.nombre && (
-                  <span className="mt-2 inline-flex items-center gap-1 rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
-                    <FolderOpen size={12} />
-                    {tarea.proyectos.nombre}
-                  </span>
-                )}
-              </div>
-            );
-          })() : null}
-        </DragOverlay>
-      </DndContext>
+    <KanbanBoard
+      columnas={COLUMNAS}
+      empresaId={empresaId}
+      proyectos={proyectos}
+      empleados={empleados}
+      cargarTareas={cargarTareas}
+      onCrearTarea={onCrearTarea}
+      onActualizarTarea={onActualizarTarea}
+      onMoverTarea={onMoverTarea}
+      onEliminarTarea={onEliminarTarea}
+      i18nPrefix="tareas"
+      emptyTitleKey="tareas.noTasks"
+      emptyDescription="Create tasks from the projects."
+      addTaskLabelKey="tareas.addTask"
+      onChange={onChange}
+    />
+  );
+}
 
-      {/* Modal de edición */}
-      {editingTarea && (
-        <TareaForm
-          isOpen={!!editingTarea}
-          onClose={handleCloseEdit}
-          onSuccess={() => { handleCloseEdit(); cargarDatos(); }}
-          empresaId={empresaId}
-          proyectos={proyectos}
-          empleados={empleados}
-          tarea={editingTarea}
-        />
-      )}
+/* ── Componente auxiliar para errores ── */
+function ServiceErrorBox({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <div className="rounded-lg border border-red-200 bg-red-50 px-6 py-4 text-red-700 shadow-sm">
+        <h3 className="text-sm font-semibold">{error.message}</h3>
+      </div>
+      <button
+        onClick={onRetry}
+        className="mt-4 text-sm text-blue-600 hover:underline"
+      >
+        Retry
+      </button>
     </div>
   );
 }

@@ -13,34 +13,33 @@ import {
   ChevronRight,
 
 
-
   Search,
 } from "lucide-react";
 
 /* =========================
-   DATOS ESTÁTICOS DEMO
+   STATIC DEMO DATA
    ========================= */
 
 const EMPRESA_DEMO = {
-  nombre: "Distribuidora Demo S.A.",
+  nombre: "Demo S.A. Distributor",
   ruc: "1234567890001",
-  direccion: "Av. Principal 123, Quito",
+  direccion: "123 Main Ave, Quito",
   telefono: "099 123 456",
-  email: "contacto@demo.com",
+  email: "contact@demo.com",
 };
 
 const USUARIO_DEMO = {
   nombre: "Bob Demo",
   email: "Bob@demo.com",
-  rol: "gerente",
+  rol: "Manager",
 };
 
 const CATEGORIAS = [
-  { id: "cat1", nombre: "Computación" },
-  { id: "cat2", nombre: "Oficina" },
-  { id: "cat3", nombre: "Muebles" },
-  { id: "cat4", nombre: "Accesorios" },
-  { id: "cat5", nombre: "Papelería" },
+  { id: "cat1", nombre: "Computing" },
+  { id: "cat2", nombre: "Office" },
+  { id: "cat3", nombre: "Furniture" },
+  { id: "cat4", nombre: "Accessories" },
+  { id: "cat5", nombre: "Stationery" },
 ];
 
 const PRODUCTOS = [
@@ -48,165 +47,165 @@ const PRODUCTOS = [
     id: "p1",
     codigo: "PROD-001",
     nombre: "Laptop Dell Latitude 5420",
-    descripcion: "Laptop corporativa i5 16GB RAM 512GB SSD",
+    descripcion: "Corporate laptop i5 16GB RAM 512GB SSD",
     categoria_id: "cat1",
     precio_venta: 850,
     costo: 700,
     stock: 12,
-    estado: "Activo",
+    estado: "Active",
   },
   {
     id: "p2",
     codigo: "PROD-002",
-    nombre: "Impresora HP LaserJet Pro",
-    descripcion: "Impresora láser blanco y negro",
+    nombre: "Printer HP LaserJet Pro",
+    descripcion: "Black and white laser printer",
     categoria_id: "cat2",
     precio_venta: 320,
     costo: 280,
     stock: 5,
-    estado: "Activo",
+    estado: "Active",
   },
   {
     id: "p3",
     codigo: "PROD-003",
-    nombre: "Silla Ergonómica Oficina",
-    descripcion: "Silla de oficina con soporte lumbar",
+    nombre: "Ergonomic Chair",
+    descripcion: "Office chair with lumbar support",
     categoria_id: "cat3",
     precio_venta: 140,
     costo: 110,
     stock: 20,
-    estado: "Activo",
+    estado: "Active",
   },
   {
     id: "p4",
     codigo: "PROD-004",
-    nombre: "Monitor 24 pulgadas LED",
-    descripcion: "Monitor Full HD 24 pulgadas",
+    nombre: "24-inch LED Monitor",
+    descripcion: "Full HD 24-inch monitor",
     categoria_id: "cat1",
     precio_venta: 180,
     costo: 150,
     stock: 8,
-    estado: "Activo",
+    estado: "Active",
   },
   {
     id: "p5",
     codigo: "PROD-005",
-    nombre: "Teclado Inalámbrico",
-    descripcion: "Teclado Bluetooth compacto",
+    nombre: "Wireless Keyboard",
+    descripcion: "Compact Bluetooth keyboard",
     categoria_id: "cat4",
     precio_venta: 25,
     costo: 15,
     stock: 0,
-    estado: "Agotado",
+    estado: "Out of Stock",
   },
   {
     id: "p6",
     codigo: "PROD-006",
-    nombre: "Mouse Optical USB",
-    descripcion: "Mouse con cable USB",
+    nombre: "USB Optical Mouse",
+    descripcion: "USB wired mouse",
     categoria_id: "cat4",
     precio_venta: 12,
     costo: 8,
     stock: 35,
-    estado: "Activo",
+    estado: "Active",
   },
   {
     id: "p7",
     codigo: "PROD-007",
-    nombre: "Resma Papel A4",
-    descripcion: "Resma de papel blanco A4 75g",
+    nombre: "A4 Paper Ream",
+    descripcion: "A4 white paper ream 75g",
     categoria_id: "cat5",
     precio_venta: 5,
     costo: 3.5,
     stock: 50,
-    estado: "Activo",
+    estado: "Active",
   },
   {
     id: "p8",
     codigo: "PROD-008",
-    nombre: "Archivador Metálico",
-    descripcion: "Archivador de metales para documentos",
+    nombre: "Metal Filing Cabinet",
+    descripcion: "Metal document filing cabinet",
     categoria_id: "cat3",
     precio_venta: 45,
     costo: 35,
     stock: 6,
-    estado: "Activo",
+    estado: "Active",
   },
 ];
 
 const CLIENTES = [
-  { id: "c1", nombre: "Ferretería Central", ruc: "1001", telefono: "098 111 222", ciudad: "Quito" },
-  { id: "c2", nombre: "Oficinas Norte S.R.L.", ruc: "1002", telefono: "098 333 444", ciudad: "Guayaquil" },
-  { id: "c3", nombre: "Librería del Este", ruc: "1003", telefono: "098 555 666", ciudad: "Cuenca" },
-  { id: "c4", nombre: "Constructora Paz", ruc: "1004", telefono: "098 777 888", ciudad: "Ambato" },
-  { id: "c5", nombre: "Café del Centro", ruc: "1005", telefono: "098 999 000", ciudad: "Loja" },
+  { id: "c1", nombre: "Central Hardware Store", ruc: "1001", telefono: "098 111 222", ciudad: "Quito" },
+  { id: "c2", nombre: "North Offices S.R.L.", ruc: "1002", telefono: "098 333 444", ciudad: "Guayaquil" },
+  { id: "c3", nombre: "East Bookstore", ruc: "1003", telefono: "098 555 666", ciudad: "Cuenca" },
+  { id: "c4", nombre: "Paz Construction", ruc: "1004", telefono: "098 777 888", ciudad: "Ambato" },
+  { id: "c5", nombre: "Center Café", ruc: "1005", telefono: "098 999 000", ciudad: "Loja" },
 ];
 
 const VENTAS = [
-  { id: "v101", fecha: "2026-11-10", cliente_id: "c1", total: 1700, estado: "Pagada", metodo: "Efectivo" },
-  { id: "v102", fecha: "2026-11-09", cliente_id: "c2", total: 960, estado: "Pendiente", metodo: "Transferencia" },
-  { id: "v103", fecha: "2026-11-08", cliente_id: "c3", total: 210, estado: "Pagada", metodo: "Tarjeta" },
-  { id: "v104", fecha: "2026-11-07", cliente_id: "c4", total: 2800, estado: "Pendiente", metodo: "Transferencia" },
-  { id: "v105", fecha: "2026-11-06", cliente_id: "c5", total: 140, estado: "Pagada", metodo: "Efectivo" },
+  { id: "v101", fecha: "2026-11-10", cliente_id: "c1", total: 1700, estado: "Paid", metodo: "Cash" },
+  { id: "v102", fecha: "2026-11-09", cliente_id: "c2", total: 960, estado: "Pending", metodo: "Transfer" },
+  { id: "v103", fecha: "2026-11-08", cliente_id: "c3", total: 210, estado: "Paid", metodo: "Card" },
+  { id: "v104", fecha: "2026-11-07", cliente_id: "c4", total: 2800, estado: "Pending", metodo: "Transfer" },
+  { id: "v105", fecha: "2026-11-06", cliente_id: "c5", total: 140, estado: "Paid", metodo: "Cash" },
 ];
 
 const EMPLEADOS = [
-  { id: "e1", nombre: "Carlos Mendoza", cargo: "Gerente", departamento: "Dirección", email: "carlos@demo.com", estado: "Activo" },
-  { id: "e2", nombre: "Ana García", cargo: "Contador", departamento: "Finanzas", email: "ana@demo.com", estado: "Activo" },
-  { id: "e3", nombre: "Luis Rodríguez", cargo: "Vendedor", departamento: "Ventas", email: "luis@demo.com", estado: "Activo" },
-  { id: "e4", nombre: "María López", cargo: "Inventario", departamento: "Almacén", email: "maria@demo.com", estado: "Activo" },
+  { id: "e1", nombre: "Carlos Mendoza", cargo: "Manager", departamento: "Management", email: "carlos@demo.com", estado: "Active" },
+  { id: "e2", nombre: "Ana García", cargo: "Accountant", departamento: "Finance", email: "ana@demo.com", estado: "Active" },
+  { id: "e3", nombre: "Luis Rodríguez", cargo: "Salesperson", departamento: "Sales", email: "luis@demo.com", estado: "Active" },
+  { id: "e4", nombre: "María López", cargo: "Inventory", departamento: "Warehouse", email: "maria@demo.com", estado: "Active" },
 ];
 
 const TAREAS = [
-  { id: "t1", titulo: "Revisar stock de computación", estado: "Pendiente", asignado: "María López", prioridad: "Alta", fecha: "2026-11-16" },
-  { id: "t2", titulo: "Emisión de factura noviembre", estado: "En curso", asignado: "Ana García", prioridad: "Media", fecha: "2026-11-15" },
-  { id: "t3", titulo: "Capacitación nuevo POS", estado: "Completada", asignado: "Luis Rodríguez", prioridad: "Baja", fecha: "2026-11-10" },
-  { id: "t4", titulo: "Auditoría de almacén", estado: "Pendiente", asignado: "Carlos Mendoza", prioridad: "Alta", fecha: "2026-11-18" },
+  { id: "t1", titulo: "Review computing stock", estado: "Pending", asignado: "María López", prioridad: "High", fecha: "2026-11-16" },
+  { id: "t2", titulo: "November invoicing", estado: "In Progress", asignado: "Ana García", prioridad: "Medium", fecha: "2026-11-15" },
+  { id: "t3", titulo: "New POS training", estado: "Completed", asignado: "Luis Rodríguez", prioridad: "Low", fecha: "2026-11-10" },
+  { id: "t4", titulo: "Warehouse audit", estado: "Pending", asignado: "Carlos Mendoza", prioridad: "High", fecha: "2026-11-18" },
 ];
 
 const NAV_SECTIONS = [
-  { label: "Inicio", href: "/demo/inicio", icon: LayoutDashboard, children: [] },
+  { label: "Home", href: "/demo/home", icon: LayoutDashboard, children: [] },
   {
-    label: "RR.HH.",
+    label: "HR",
     icon: Users,
     children: [
-      { href: "/demo/rrhh/empleados", label: "Empleados" },
+      { href: "/demo/hr/employees", label: "Employees" },
     ],
   },
   {
-    label: "Inventario",
+    label: "Inventory",
     icon: Package,
     children: [
-      { href: "/demo/inventario/productos", label: "Productos" },
+      { href: "/demo/inventory/products", label: "Products" },
     ],
   },
   {
-    label: "Ventas",
+    label: "Sales",
     icon: ShoppingCart,
     children: [
-      { href: "/demo/ventas/pos", label: "Punto de Venta" },
-      { href: "/demo/ventas/clientes", label: "Clientes" },
-      { href: "/demo/ventas/facturas", label: "Facturas" },
+      { href: "/demo/sales/pos", label: "Point of Sale" },
+      { href: "/demo/sales/customers", label: "Customers" },
+      { href: "/demo/sales/invoices", label: "Invoices" },
     ],
   },
   {
-    label: "Tareas",
+    label: "Tasks",
     icon: ClipboardList,
     children: [
-      { href: "/demo/tareas/tablero", label: "Tablero Kanban" },
+      { href: "/demo/tasks/kanban", label: "Kanban Board" },
     ],
   },
   {
-    label: "Configuración",
+    label: "Settings",
     icon: Settings,
     children: [
-      { href: "/demo/configuracion/empresa", label: "Mi Empresa" },
+      { href: "/demo/settings/company", label: "My Company" },
     ],
   },
 ];
 
 /* =========================
-   COMPONENTES BASE DE UI
+   BASE UI COMPONENTS
    ========================= */
 
 function Badge({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -222,14 +221,14 @@ function PageHeader({ title }: { title: string }) {
     <div className="flex items-center justify-between mb-6">
       <div>
         <h1 className="text-xl font-bold text-slate-900">{title}</h1>
-        <p className="text-sm text-slate-500">AGET - Modo Demostración</p>
+        <p className="text-sm text-slate-500">AGET - Demo Mode</p>
       </div>
     </div>
   );
 }
 
 /* =========================
-   SIDEBAR (replica del original)
+   SIDEBAR (replica of the original)
    ========================= */
 
 function DemoSidebar({ pathname, onNavigate }: { pathname: string; onNavigate: (href: string) => void }) {
@@ -240,8 +239,8 @@ function DemoSidebar({ pathname, onNavigate }: { pathname: string; onNavigate: (
   };
 
   const isActive = (href: string) => {
-    if (href === "/demo/inicio") {
-      return pathname === "/demo/inicio" || pathname === "/demo";
+    if (href === "/demo/home") {
+      return pathname === "/demo/home" || pathname === "/demo";
     }
     return pathname.startsWith(href);
   };
@@ -311,7 +310,7 @@ function DemoSidebar({ pathname, onNavigate }: { pathname: string; onNavigate: (
           );
         })}
         <div className="mt-6 px-3 py-2 border-t border-slate-800">
-          <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Usuario demo</p>
+          <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Demo user</p>
           <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-800/50">
             <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">
               C
@@ -328,7 +327,7 @@ function DemoSidebar({ pathname, onNavigate }: { pathname: string; onNavigate: (
 }
 
 /* =========================
-   NAVBAR (replica del original)
+   NAVBAR (replica of the original)
    ========================= */
 
 function DemoNavbar({ title }: { title: string }) {
@@ -348,7 +347,7 @@ function DemoNavbar({ title }: { title: string }) {
       <div className="flex items-center gap-3">
         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 text-sm text-slate-600">
           <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-          Modo demostración
+          Demo mode
         </div>
         <div className="relative">
           <button
@@ -366,7 +365,7 @@ function DemoNavbar({ title }: { title: string }) {
                 onClick={() => router.push("/")}
                 className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
               >
-                Cerrar sesión demo
+                Close demo session
               </button>
             </div>
           )}
@@ -377,7 +376,7 @@ function DemoNavbar({ title }: { title: string }) {
 }
 
 /* =========================
-   ESTADÍSTICAS
+   STATISTICS
    ========================= */
 
 function StatCard({ title, value, subtitle, color }: { title: string; value: string | number; subtitle: string; color: "blue" | "green" | "orange" | "purple" | "red" }) {
@@ -398,28 +397,28 @@ function StatCard({ title, value, subtitle, color }: { title: string; value: str
 }
 
 /* =========================
-   MÓDULOS (UI idéntica al original, datos estáticos, solo lectura)
+   MODULES (UI identical to the original, static data, read-only)
    ========================= */
 
-// ---- Inicio ----
-function ModuloInicio() {
+// ---- Home ----
+function ModuloHome() {
   const totalVentas = VENTAS.reduce((a, b) => a + b.total, 0);
-  const ventasPendientes = VENTAS.filter((v) => v.estado === "Pendiente").length;
+  const ventasPendientes = VENTAS.filter((v) => v.estado === "Pending").length;
   const stockBajo = PRODUCTOS.filter((p) => p.stock <= 5 && p.stock > 0).length;
-  const agotados = PRODUCTOS.filter((p) => p.stock === 0).length;
+  const outOfStock = PRODUCTOS.filter((p) => p.stock === 0).length;
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Inicio" />
+      <PageHeader title="Home" />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Ventas" value={`${totalVentas}`} subtitle="USD" color="blue" />
-        <StatCard title="Ventas Pendientes" value={ventasPendientes} subtitle="facturas" color="orange" />
-        <StatCard title="Stock Bajo" value={stockBajo} subtitle="productos" color="red" />
-        <StatCard title="Productos Agotados" value={agotados} subtitle="items" color="red" />
+        <StatCard title="Total Sales" value={`${totalVentas}`} subtitle="USD" color="blue" />
+        <StatCard title="Pending Sales" value={ventasPendientes} subtitle="invoices" color="orange" />
+        <StatCard title="Low Stock" value={stockBajo} subtitle="products" color="red" />
+        <StatCard title="Out of Stock Products" value={outOfStock} subtitle="items" color="red" />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Ventas recientes</h3>
+          <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Recent Sales</h3>
           <div className="space-y-3">
             {VENTAS.slice(0, 4).map((v) => {
               const cliente = CLIENTES.find((c) => c.id === v.cliente_id);
@@ -431,7 +430,7 @@ function ModuloInicio() {
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-bold text-slate-900">${v.total}</div>
-                    <Badge className={v.estado === "Pagada" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}>
+                    <Badge className={v.estado === "Paid" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}>
                       {v.estado}
                     </Badge>
                   </div>
@@ -441,7 +440,7 @@ function ModuloInicio() {
           </div>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Productos con stock bajo</h3>
+          <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Low Stock Products</h3>
           <div className="space-y-3">
             {PRODUCTOS.filter((p) => p.stock <= 5 && p.stock > 0).map((p) => (
               <div key={p.id} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-orange-50">
@@ -455,7 +454,7 @@ function ModuloInicio() {
               </div>
             ))}
             {PRODUCTOS.filter((p) => p.stock <= 5 && p.stock > 0).length === 0 && (
-              <div className="text-center py-4 text-xs text-slate-400">Sin productos con stock bajo</div>
+              <div className="text-center py-4 text-xs text-slate-400">No products with low stock</div>
             )}
           </div>
         </div>
@@ -464,7 +463,7 @@ function ModuloInicio() {
   );
 }
 
-// ---- Inventario / Productos (replica exacta de la original, solo lectura) ----
+// ---- Inventory / Products (exact replica of the original, read-only) ----
 function ModuloProductos() {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -477,41 +476,41 @@ function ModuloProductos() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Productos" />
+      <PageHeader title="Products" />
 
-      {/* Buscador (replica de la original) */}
+      {/* Search (replica of the original) */}
       <div className="relative mb-6">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
         <input
           type="text"
-          placeholder="Buscar por nombre o código del producto..."
+          placeholder="Search by product name or code..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-sm shadow-sm placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
         {searchTerm && filtered.length > 0 && (
           <p className="mt-1 text-xs text-slate-400">
-            {filtered.length} resultado(s)
+            {filtered.length} result(s)
           </p>
         )}
       </div>
 
       {PRODUCTOS.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-sm text-slate-400">
-          No hay productos registrados
+          No products registered
         </div>
       ) : (
         <>
-          {/* Vista Desktop: Tabla (replica exacta de la original) */}
+          {/* Desktop view: Table (exact replica of the original) */}
           <div className="hidden sm:block overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Código</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Nombre</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Categoría</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Precio Venta</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Costo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Code</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Category</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Sale Price</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Cost</th>
                   <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Stock</th>
                 </tr>
               </thead>
@@ -519,7 +518,7 @@ function ModuloProductos() {
                 {filtered.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center text-sm text-slate-400">
-                      No se encontraron productos con {searchTerm}
+                      No products found with {searchTerm}
                     </td>
                   </tr>
                 ) : (
@@ -542,11 +541,11 @@ function ModuloProductos() {
             </table>
           </div>
 
-          {/* Vista Mobile: Cards */}
+          {/* Mobile view: Cards */}
           <div className="sm:hidden space-y-3">
             {filtered.length === 0 ? (
               <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-400">
-                No se encontraron productos con {searchTerm}
+                No products found with {searchTerm}
               </div>
             ) : (
               filtered.map((p) => (
@@ -576,33 +575,33 @@ function ModuloProductos() {
   );
 }
 
-// ---- Ventas / POS ----
+// ---- Sales / POS ----
 function ModuloVentas() {
   const total = VENTAS.reduce((a, b) => a + b.total, 0);
-  const pagadas = VENTAS.filter((v) => v.estado === "Pagada").length;
-  const pendientes = VENTAS.filter((v) => v.estado === "Pendiente").length;
+  const pagadas = VENTAS.filter((v) => v.estado === "Paid").length;
+  const pendientes = VENTAS.filter((v) => v.estado === "Pending").length;
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Ventas / POS" />
+      <PageHeader title="Sales / POS" />
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard title="Total Ventas" value={VENTAS.length} subtitle="transacciones" color="blue" />
-        <StatCard title="Ingresos" value={`${total}`} subtitle="USD" color="green" />
-        <StatCard title="Pagadas" value={pagadas} subtitle="facturas" color="green" />
-        <StatCard title="Pendientes" value={pendientes} subtitle="facturas" color="orange" />
+        <StatCard title="Total Sales" value={VENTAS.length} subtitle="transactions" color="blue" />
+        <StatCard title="Revenue" value={`${total}`} subtitle="USD" color="green" />
+        <StatCard title="Paid" value={pagadas} subtitle="invoices" color="green" />
+        <StatCard title="Pending" value={pendientes} subtitle="invoices" color="orange" />
       </div>
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Historial de ventas</h3>
+        <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Sales History</h3>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500"># Venta</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Cliente</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Fecha</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500"># Sale</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Customer</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Date</th>
                 <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Total</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Estado</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Método</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Status</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Method</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -615,7 +614,7 @@ function ModuloVentas() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{v.fecha}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-slate-900">${v.total}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <Badge className={v.estado === "Pagada" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}>
+                      <Badge className={v.estado === "Paid" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}>
                         {v.estado}
                       </Badge>
                     </td>
@@ -631,21 +630,21 @@ function ModuloVentas() {
   );
 }
 
-// ---- Ventas / Clientes ----
+// ---- Sales / Customers ----
 function ModuloClientes() {
   return (
     <div className="space-y-6">
-      <PageHeader title="Clientes" />
+      <PageHeader title="Customers" />
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Directorio de clientes</h3>
+        <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Customer Directory</h3>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Nombre</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">RUC</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Teléfono</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Ciudad</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Tax ID</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Phone</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">City</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -665,31 +664,31 @@ function ModuloClientes() {
   );
 }
 
-// ---- RR.HH. / Empleados ----
+// ---- HR / Employees ----
 function ModuloEmpleados() {
-  const activos = EMPLEADOS.filter((e) => e.estado === "Activo").length;
+  const activos = EMPLEADOS.filter((e) => e.estado === "Active").length;
   const departamentos = new Set(EMPLEADOS.map((e) => e.departamento)).size;
 
   return (
     <div className="space-y-6">
-      <PageHeader title="RR.HH. - Empleados" />
+      <PageHeader title="HR - Employees" />
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard title="Empleados" value={EMPLEADOS.length} subtitle="registrados" color="blue" />
-        <StatCard title="Activos" value={activos} subtitle="empleados" color="green" />
-        <StatCard title="Departamentos" value={departamentos} subtitle="áreas" color="purple" />
-        <StatCard title="Vendedores" value={EMPLEADOS.filter((e) => e.cargo === "Vendedor").length} subtitle="personal" color="orange" />
+        <StatCard title="Employees" value={EMPLEADOS.length} subtitle="registered" color="blue" />
+        <StatCard title="Active" value={activos} subtitle="employees" color="green" />
+        <StatCard title="Departments" value={departamentos} subtitle="areas" color="purple" />
+        <StatCard title="Salespeople" value={EMPLEADOS.filter((e) => e.cargo === "Salesperson").length} subtitle="staff" color="orange" />
       </div>
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Plantilla de empleados</h3>
+        <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Employee Roster</h3>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Nombre</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Cargo</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Departamento</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Position</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Department</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Email</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Estado</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -712,19 +711,19 @@ function ModuloEmpleados() {
   );
 }
 
-// ---- Tareas / Kanban ----
+// ---- Tasks / Kanban ----
 function ModuloTareas() {
   const estadoColor: Record<string, string> = {
-    Pendiente: "text-red-500",
-    "En curso": "text-yellow-600",
-    Completada: "text-green-600",
+    Pending: "text-red-500",
+    "In Progress": "text-yellow-600",
+    Completed: "text-green-600",
   };
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Tareas / Kanban" />
+      <PageHeader title="Tasks / Kanban" />
       <div className="flex gap-4">
-        {["Pendiente", "En curso", "Completada"].map((estado) => (
+        {["Pending", "In Progress", "Completed"].map((estado) => (
           <div
             key={estado}
             className="flex-1 min-w-[240px] bg-slate-100 rounded-xl p-4"
@@ -742,12 +741,12 @@ function ModuloTareas() {
                     <h4 className="text-sm font-medium text-slate-900">{t.titulo}</h4>
                     <Badge className="bg-slate-200 text-slate-700">{t.prioridad}</Badge>
                   </div>
-                  <p className="text-xs text-slate-500 mb-2">Asignado a: {t.asignado}</p>
+                  <p className="text-xs text-slate-500 mb-2">Assigned to: {t.asignado}</p>
                   <span className="text-xs text-slate-400">{t.fecha}</span>
                 </div>
               ))}
               {TAREAS.filter((t) => t.estado === estado).length === 0 && (
-                <div className="text-center py-4 text-xs text-slate-400">Sin tareas</div>
+                <div className="text-center py-4 text-xs text-slate-400">No tasks</div>
               )}
             </div>
           </div>
@@ -757,22 +756,22 @@ function ModuloTareas() {
   );
 }
 
-// ---- Ventas / Facturas ----
+// ---- Sales / Invoices ----
 function ModuloFacturas() {
   return (
     <div className="space-y-6">
-      <PageHeader title="Facturación" />
+      <PageHeader title="Invoicing" />
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Facturas emitidas</h3>
+        <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Issued Invoices</h3>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Factura</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Cliente</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Fecha</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Monto</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Estado</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Invoice</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Customer</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Date</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Amount</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -785,7 +784,7 @@ function ModuloFacturas() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{v.fecha}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-slate-900">${v.total}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <Badge className={v.estado === "Pagada" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}>
+                      <Badge className={v.estado === "Paid" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}>
                         {v.estado}
                       </Badge>
                     </td>
@@ -800,29 +799,29 @@ function ModuloFacturas() {
   );
 }
 
-// ---- Configuración / Empresa ----
+// ---- Settings / Company ----
 function ModuloConfiguracion() {
   return (
     <div className="space-y-6">
-      <PageHeader title="Configuración" />
+      <PageHeader title="Settings" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Empresa</h3>
+          <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Company</h3>
           <div className="space-y-3">
             <div className="flex justify-between">
-              <span className="text-sm text-slate-600">Nombre</span>
+              <span className="text-sm text-slate-600">Name</span>
               <span className="text-sm font-medium text-slate-900">{EMPRESA_DEMO.nombre}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-slate-600">RUC</span>
+              <span className="text-sm text-slate-600">Tax ID</span>
               <span className="text-sm font-medium text-slate-900 font-mono">{EMPRESA_DEMO.ruc}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-slate-600">Dirección</span>
+              <span className="text-sm text-slate-600">Address</span>
               <span className="text-sm text-slate-600">{EMPRESA_DEMO.direccion}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-slate-600">Teléfono</span>
+              <span className="text-sm text-slate-600">Phone</span>
               <span className="text-sm text-slate-600 font-mono">{EMPRESA_DEMO.telefono}</span>
             </div>
             <div className="flex justify-between">
@@ -832,10 +831,10 @@ function ModuloConfiguracion() {
           </div>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Usuario actual (demo)</h3>
+          <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Current User (demo)</h3>
           <div className="space-y-3">
             <div className="flex justify-between">
-              <span className="text-sm text-slate-600">Nombre</span>
+              <span className="text-sm text-slate-600">Name</span>
               <span className="text-sm font-medium text-slate-900">{USUARIO_DEMO.nombre}</span>
             </div>
             <div className="flex justify-between">
@@ -843,7 +842,7 @@ function ModuloConfiguracion() {
               <span className="text-sm font-medium text-slate-900 font-mono">{USUARIO_DEMO.email}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-slate-600">Rol</span>
+              <span className="text-sm text-slate-600">Role</span>
               <span className="text-sm font-medium text-slate-900 capitalize">{USUARIO_DEMO.rol}</span>
             </div>
           </div>
@@ -851,9 +850,9 @@ function ModuloConfiguracion() {
       </div>
       <div className="bg-blue-50 rounded-xl border border-blue-200 p-4">
         <p className="text-sm text-blue-800">
-          Esta es una <strong>demostración con datos estáticos</strong>. Todos los datos se muestran
-          directamente en la página y no se guardan en una base de datos. Para usar el sistema con datos
-          reales, regístrese desde el inicio.
+          This is a <strong>static data demo</strong>. All data is displayed directly
+          on the page and is not saved to a database. To use the system with real
+          data, sign up from the home page.
         </p>
       </div>
     </div>
@@ -861,29 +860,29 @@ function ModuloConfiguracion() {
 }
 
 /* =========================
-   PÁGINA PRINCIPAL DEMO
+   MAIN DEMO PAGE
    ========================= */
 
 const MODULE_ROUTES: Record<string, ReactElement> = {
-  "/demo/inicio": <ModuloInicio />,
-  "/demo/rrhh/empleados": <ModuloEmpleados />,
-  "/demo/inventario/productos": <ModuloProductos />,
-  "/demo/ventas/pos": <ModuloVentas />,
-  "/demo/ventas/clientes": <ModuloClientes />,
-  "/demo/ventas/facturas": <ModuloFacturas />,
-  "/demo/tareas/tablero": <ModuloTareas />,
-  "/demo/configuracion/empresa": <ModuloConfiguracion />,
+  "/demo/home": <ModuloHome />,
+  "/demo/hr/employees": <ModuloEmpleados />,
+  "/demo/inventory/products": <ModuloProductos />,
+  "/demo/sales/pos": <ModuloVentas />,
+  "/demo/sales/customers": <ModuloClientes />,
+  "/demo/sales/invoices": <ModuloFacturas />,
+  "/demo/tasks/kanban": <ModuloTareas />,
+  "/demo/settings/company": <ModuloConfiguracion />,
 };
 
 export default function DemoPage() {
-  const [pathname, setPathname] = useState("/demo/inicio");
+  const [pathname, setPathname] = useState("/demo/home");
 
   const onNavigate = (href: string) => {
     setPathname(href);
     window.scrollTo(0, 0);
   };
 
-  const ModuleContent = MODULE_ROUTES[pathname] || <ModuloInicio />;
+  const ModuleContent = MODULE_ROUTES[pathname] || <ModuloHome />;
 
   return (
     <div className="min-h-screen bg-slate-50">
